@@ -190,11 +190,11 @@ func (u *User) Validate() error {
 	if err := u.encryptPassword(); err != nil {
 		return err
 	}
-	// set the default accessibility
-	if len(u.DefaultAccessibility) == 0 {
-		u.DefaultAccessibility = accessPrivate
-	}
 	if err = validateAccessibility(u.DefaultAccessibility); err != nil {
+		return err
+	}
+
+	if err = validateStatus(u.Status); err != nil {
 		return err
 	}
 
