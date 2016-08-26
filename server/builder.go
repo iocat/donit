@@ -32,6 +32,9 @@ func (sb *serverBuilder) router() *serverBuilder {
 	common.HandleFunc("/users/{user}/goals", handler.Get("goals"))
 	common.HandleFunc("/users/{user}/goals/{goal}", handler.Get("goal"))
 
+	common.HandleFunc("/users/{user}/followers", handler.Get("followers"))
+	common.HandleFunc("/users/{user}/followers/{follower}", handler.Get("follower"))
+
 	common.HandleFunc("/users/{user}/goals/{goal}/habits", handler.Get("habits"))
 	common.HandleFunc("/users/{user}/goals/{goal}/habits/{habit}", handler.Get("habit"))
 

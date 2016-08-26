@@ -49,6 +49,16 @@ func (d *database) setup() error {
 	if err := d.C(collectionUser).EnsureIndex(usernameIndex); err != nil {
 		return err
 	}
+	// follower index
+	followerIndex := mgo.Index{
+		Key:        []string{"username", "follower"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+	}
+	if err := d.C(collectionFollower).EnsureIndex(followerIndex); err != nil {
+		return err
+	}
 	return nil
 }
 

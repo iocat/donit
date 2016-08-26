@@ -30,6 +30,7 @@ func Get(name string) http.HandlerFunc {
 	goals, goal := generateHandlers(collectionGoal)
 	habits, habit := generateHandlers(collectionHabit)
 	tasks, task := generateHandlers(collectionTask)
+	followers, follower := generateHandlers(collectionFollower)
 	switch name {
 	case "users":
 		return users
@@ -47,6 +48,10 @@ func Get(name string) http.HandlerFunc {
 		return tasks
 	case "task":
 		return task
+	case "followers":
+		return followers
+	case "follower":
+		return follower
 	case "validator":
 		return validate
 	default:
@@ -95,7 +100,7 @@ func getCollectionParentIDs(collection string, r *http.Request) bson.M {
 	switch collection {
 	case collectionUser:
 		return nil
-	case collectionGoal:
+	case collectionGoal, collectionFollower:
 		m["user"] = keys["user"]
 	case collectionHabit, collectionTask:
 		m["user"], m["goal"] = keys["user"], keys["goal"]
@@ -105,6 +110,8 @@ func getCollectionParentIDs(collection string, r *http.Request) bson.M {
 	return nil
 }
 
+// getCollection gets the collection concrete type based on the collection's
+// name
 func getCollection(collection string) interface{} {
 	switch collection {
 	case collectionUser:
@@ -115,17 +122,22 @@ func getCollection(collection string) interface{} {
 		return &[]Habit{}
 	case collectionTask:
 		return &[]Task{}
+	case collectionFollower:
+		return &[]Follower{}
 	default:
 		panic("collection not supported")
 	}
 }
 
+// getItem gets the item based on the collection name
 func getItem(collection string) Item {
 	switch collection {
 	case collectionUser:
 		return &User{}
 	case collectionGoal:
 		return &Goal{}
+	case collectionFollower:
+		return &Follower{}
 	case collectionHabit:
 		return &Habit{}
 	case collectionTask:
@@ -156,6 +168,12 @@ func parseIDToItem(obj Item, readChildID bool, r *http.Request) error {
 	case *Goal:
 		obj.User = keys["user"]
 		idName, objID = "goal", &obj.ID
+	case *Follower:
+		obj.User = keys["user"]
+		if readChildID {
+			obj.Follower = keys["follower"]
+		}
+		return nil
 	case *Habit:
 		obj.User = keys["user"]
 		obj.Goal = keys["goal"]

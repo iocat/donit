@@ -26,10 +26,11 @@ const (
 	statusSubgoalDone    = "DONE"
 	statusSubgoalNotDone = "NOT_DONE"
 
-	collectionUser  = "users"
-	collectionGoal  = "goals"
-	collectionHabit = "habits"
-	collectionTask  = "tasks"
+	collectionUser     = "users"
+	collectionGoal     = "goals"
+	collectionHabit    = "habits"
+	collectionTask     = "tasks"
+	collectionFollower = "followers"
 )
 
 const (
@@ -124,18 +125,33 @@ func (r *RepeatReminder) Validate() error {
 
 // User represents a user
 type User struct {
-	ID                   bson.ObjectId   `bson:"_id,omitempty" json:"-"`
-	Username             string          `bson:"username" json:"username"`
-	Email                string          `bson:"email" json:"email"`
-	Firstname            string          `bson:"firstName" json:"firstName"`
-	Lastname             string          `bson:"lastName" json:"lastName"`
-	Status               string          `bson:"status" json:"status"`
-	DefaultAccessibility string          `bson:"defaultAccess" json:"defaultAccess"`
-	CreatedAt            time.Time       `bson:"createdAt" json:"createdAt"`
-	PictureURL           *string         `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty"`
-	Followers            map[string]bool `bson:"followers,omitempty" json:"followers,omitempty"`
-	Password             *string         `bson:"password" json:"password,omitempty"`
-	Salt                 *string         `bson:"salt" json:"-"`
+	Username             string    `bson:"username" json:"username"`
+	Email                string    `bson:"email" json:"email"`
+	Firstname            string    `bson:"firstName" json:"firstName"`
+	Lastname             string    `bson:"lastName" json:"lastName"`
+	Status               string    `bson:"status" json:"status"`
+	DefaultAccessibility string    `bson:"defaultAccess" json:"defaultAccess"`
+	LastUpdated          time.Time `bson:"lastUpdated" json:"lastUpdated"`
+	PictureURL           *string   `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty"`
+	Password             *string   `bson:"password" json:"password,omitempty"`
+	Salt                 *string   `bson:"salt" json:"-"`
+}
+
+// Follower represents the user follower
+type Follower struct {
+	User     string `bson:"username" json:"-"`
+	Follower string `bson:"follower" json:"follower"`
+}
+
+func (f Follower) Cname() string {
+	return collectionFollower
+}
+
+func (f Follower) KeySet() bson.M {
+	return bson.M{
+		"user":     f.User,
+		"follower": f.Follower,
+	}
 }
 
 // Generate salt creates a new random salt
@@ -198,7 +214,7 @@ func (u *User) Validate() error {
 		return err
 	}
 
-	u.CreatedAt = time.Now()
+	u.LastUpdated = time.Now()
 	return nil
 }
 
@@ -218,12 +234,12 @@ func (u User) KeySet() bson.M {
 type SubGoal struct {
 	Name        string    `bson:"name" json:"name"`
 	Description *string   `bson:"description,omitempty" json:"description,omitempty"`
-	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
+	LastUpdated time.Time `bson:"createdAt" json:"createdAt"`
 }
 
 // Validate implements Validator's Validate on the SubGoal Object
 func (sg *SubGoal) Validate() error {
-	sg.CreatedAt = time.Now()
+	sg.LastUpdated = time.Now()
 	switch {
 	case len(sg.Name) == 0:
 		return newError(codeBadData, "attribute name is not provided")
