@@ -81,7 +81,7 @@ func (db database) GetCollection(collection string, offset, limit int, res inter
 	if offset >= 0 {
 		q = q.Skip(offset)
 	}
-	err := q.All(&res)
+	err := q.All(res)
 	if err != nil {
 		return err
 	}
