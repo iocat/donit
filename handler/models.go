@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -22,8 +23,8 @@ const (
 	repeatEveryWeekAndCustom  = "EVERY_WEEK"
 	repeatEveryMonthAndCustom = "EVERY_MONTH"
 
-	statusDone    = "DONE"
-	statusNotDone = "NOT_DONE"
+	statusSubgoalDone    = "DONE"
+	statusSubgoalNotDone = "NOT_DONE"
 
 	collectionUser  = "users"
 	collectionGoal  = "goals"
@@ -41,11 +42,63 @@ const (
 	saturday
 )
 
+func validateAccessibility(access string) error {
+	switch access {
+	case accessPrivate, accessForFollowers, accessPublic:
+		return nil
+	default:
+		return newError(codeBadData, fmt.Sprintf("accessibility %s is undefined (only %s, %s, and %s allowed)",
+			access, accessPrivate, accessPublic, accessForFollowers))
+	}
+}
+
+func validateRepeat(repeat string) error {
+	switch repeat {
+	case repeatEveryDay, repeatEveryMonthAndCustom, repeatEveryWeekAndCustom:
+		return nil
+	default:
+		return newError(codeBadData, fmt.Sprintf("repeat field \"%s\" is undefined (only %s, %s, and %s allowed)",
+			repeat, repeatEveryDay, repeatEveryMonthAndCustom,
+			repeatEveryWeekAndCustom))
+	}
+}
+
+func validateStatus(status string) error {
+	switch status {
+	case statusOffline, statusOnlineAvailable, statusUnvailable:
+		return nil
+	default:
+		return newError(codeBadData, fmt.Sprintf("status %s is undefined(only %s, %s, and %s)",
+			status, statusOffline, statusOnlineAvailable,
+			statusUnvailable))
+	}
+}
+
+func validateStatusSubgoal(status string) error {
+	switch status {
+	case statusSubgoalDone, statusSubgoalNotDone:
+		return nil
+	default:
+		return newError(codeBadData, fmt.Sprintf(
+			"status %s is not allowed(only %s and %s)",
+			status, statusSubgoalDone, statusSubgoalNotDone))
+	}
+}
+
 // Reminder represents a reminder for tasks
 type Reminder struct {
 	At       time.Time     `bson:"remindAt" json:"remindAt"`
 	Status   string        `bson:"status" json:"status" `
 	Duration time.Duration `bson:"duration" json:"duration"`
+}
+
+// Validate implements Validator's Validate
+func (r *Reminder) Validate() error {
+	err := validateStatusSubgoal(r.Status)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RepeatReminder represents a reminder for habit
@@ -55,6 +108,18 @@ type RepeatReminder struct {
 	DaysInWeekOrMonth map[int]bool  `bson:"days" json:"repeat_on"`
 	TimeInDay         time.Duration `bson:"remindAt" json:"remindAt"`
 	Duration          time.Duration `bson:"duration" json:"duration"`
+}
+
+// Validate implements Validator's Validate
+func (r *RepeatReminder) Validate() error {
+	err := validateStatusSubgoal(r.Status)
+	if err != nil {
+		return err
+	}
+	if err = validateRepeat(r.Cycle); err != nil {
+		return err
+	}
+	return nil
 }
 
 // User represents a user
@@ -117,8 +182,6 @@ func (u *User) Validate() error {
 		err = newError(codeBadData, "first name is not provided")
 	case len(u.Lastname) == 0:
 		err = newError(codeBadData, "last name is not provided")
-	default:
-		err = nil
 	}
 	if err != nil {
 		return err
@@ -130,6 +193,9 @@ func (u *User) Validate() error {
 	// set the default accessibility
 	if len(u.DefaultAccessibility) == 0 {
 		u.DefaultAccessibility = accessPrivate
+	}
+	if err = validateAccessibility(u.DefaultAccessibility); err != nil {
+		return err
 	}
 
 	u.CreatedAt = time.Now()
@@ -183,6 +249,10 @@ func (g *Goal) Validate() error {
 	switch {
 	case len(g.Accessibility) == 0:
 		return newError(codeBadData, "attribute accessibility is not provided")
+	default:
+		if err := validateAccessibility(g.Accessibility); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -202,11 +272,11 @@ func (g Goal) KeySet() bson.M {
 
 // Habit represents a goal's habit
 type Habit struct {
-	ID       bson.ObjectId `bson:"_id,omitempty" json:"id"`
-	*SubGoal `bson:",inline"`
-	User     string `bson:"user" json:"-"`
-	Goal     string `bson:"goal" json:"-"`
-	Reminder RepeatReminder
+	ID              bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	*SubGoal        `bson:",inline"`
+	User            string `bson:"user" json:"-"`
+	Goal            string `bson:"goal" json:"-"`
+	*RepeatReminder `bson:"reminder,omitempty" json:"reminder,omitempty"`
 }
 
 // Cname implements Item's Cname
@@ -225,11 +295,11 @@ func (h Habit) KeySet() bson.M {
 
 // Task represents a goal's task
 type Task struct {
-	ID       bson.ObjectId `bson:"_id,omitempty" json:"id"`
-	*SubGoal `bson:",inline"`
-	User     string `bson:"user" json:"-"`
-	Goal     string `bson:"goal" json:"-"`
-	Reminder Reminder
+	ID        bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	*SubGoal  `bson:",inline"`
+	User      string `bson:"user" json:"-"`
+	Goal      string `bson:"goal" json:"-"`
+	*Reminder `bson:"reminder,omitempty" json:"reminder,omitempty"`
 }
 
 // Cname implements Item's Cname
