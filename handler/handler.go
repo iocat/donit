@@ -65,7 +65,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := User{}
-	parseIDToItem(&user, r)
+	parseIDToItem(&user, true, r)
 	err := db.Read(&user)
 	if err != nil {
 		handleError(err, w)
@@ -79,6 +79,8 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// decodeBodyIntoItem reads the request body and reflects the value into
+// the object
 func decodeBodyIntoItem(obj Item, r *http.Request) error {
 	if err := json.NewDecoder(r.Body).Decode(obj); err != nil {
 		return errDecodeJSON
@@ -86,7 +88,8 @@ func decodeBodyIntoItem(obj Item, r *http.Request) error {
 	return nil
 }
 
-func getCollectionIDs(collection string, r *http.Request) bson.M {
+// getCollectionParentIDs get the ID of the parent
+func getCollectionParentIDs(collection string, r *http.Request) bson.M {
 	m := make(bson.M)
 	keys := mux.Vars(r)
 	switch collection {
@@ -95,8 +98,7 @@ func getCollectionIDs(collection string, r *http.Request) bson.M {
 	case collectionGoal:
 		m["user"] = keys["user"]
 	case collectionHabit, collectionTask:
-		m["user"] = keys["user"]
-		m["goal"] = keys["goal"]
+		m["user"], m["goal"] = keys["user"], keys["goal"]
 	default:
 		panic(errors.New("type not supported"))
 	}
@@ -108,34 +110,13 @@ func getCollection(collection string) interface{} {
 	case collectionUser:
 		return nil
 	case collectionGoal:
-		return []Goal{}
+		return &[]Goal{}
 	case collectionHabit:
-		return []Habit{}
+		return &[]Habit{}
 	case collectionTask:
-		return []Task{}
+		return &[]Task{}
 	default:
 		panic("collection not supported")
-	}
-}
-
-func parseIDToItem(obj Item, r *http.Request) {
-	keys := mux.Vars(r)
-	switch obj := obj.(type) {
-	case *User:
-		obj.Username = keys["user"]
-	case *Goal:
-		obj.User = keys["user"]
-		obj.ID = keys["goal"]
-	case *Habit:
-		obj.User = keys["user"]
-		obj.Goal = keys["goal"]
-		obj.ID = keys["habit"]
-	case *Task:
-		obj.User = keys["user"]
-		obj.Goal = keys["goal"]
-		obj.ID = keys["task"]
-	default:
-		panic("type not supported")
 	}
 }
 
@@ -152,6 +133,48 @@ func getItem(collection string) Item {
 	default:
 		panic("collection not supported")
 	}
+}
+
+// parseIDToItem reads the parent+child id from the request and reflect those
+// id into the item struct
+// readChildId indicates whether to read the child's id or not,
+// (i.e. false in case we create an auto genereated id, the id provided is unnecessary)
+// Error occurs when the item's id is invalid ( not a 12 byte hex string)
+func parseIDToItem(obj Item, readChildID bool, r *http.Request) error {
+	keys := mux.Vars(r)
+	var (
+		idName string
+		objID  *bson.ObjectId
+	)
+
+	switch obj := obj.(type) {
+	case *User:
+		if readChildID {
+			obj.Username = keys["user"]
+		}
+		return nil
+	case *Goal:
+		obj.User = keys["user"]
+		idName, objID = "goal", &obj.ID
+	case *Habit:
+		obj.User = keys["user"]
+		obj.Goal = keys["goal"]
+		idName, objID = "habit", &obj.ID
+	case *Task:
+		obj.User = keys["user"]
+		obj.Goal = keys["goal"]
+		idName, objID = "task", &obj.ID
+	default:
+		panic("type not supported")
+	}
+	if readChildID {
+		id := keys[idName]
+		if !bson.IsObjectIdHex(id) {
+			return newError(codeBadData, fmt.Sprintf("id %s is invalid (must be a 12 byte hex string)", id))
+		}
+		*objID = bson.ObjectIdHex(id)
+	}
+	return nil
 }
 
 // getLimitAndOffset gets the limit and the offset form values
@@ -191,7 +214,7 @@ func generateCollectionHandler(c string) func(w http.ResponseWriter, r *http.Req
 				handleError(errMethodNotAllowed, w)
 				return
 			}
-			id, col := getCollectionIDs(c, r), getCollection(c)
+			id, col := getCollectionParentIDs(c, r), getCollection(c)
 			off, lim, err := getLimitAndOffset(r)
 			if err != nil {
 				handleError(err, w)
@@ -202,8 +225,15 @@ func generateCollectionHandler(c string) func(w http.ResponseWriter, r *http.Req
 				handleError(err, w)
 				return
 			}
+			writeJSONtoHTTP(col, w, http.StatusOK)
+			return
 		case "POST":
 			err := decodeBodyIntoItem(item, r)
+			if err != nil {
+				handleError(err, w)
+				return
+			}
+			err = parseIDToItem(item, false, r)
 			if err != nil {
 				handleError(err, w)
 				return
@@ -223,7 +253,10 @@ func generateCollectionHandler(c string) func(w http.ResponseWriter, r *http.Req
 func generateItemHandler(c string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		item := getItem(c)
-		parseIDToItem(item, r)
+		if err := parseIDToItem(item, true, r); err != nil {
+			handleError(err, w)
+			return
+		}
 		switch r.Method {
 		case "GET":
 			err := db.Read(item)
@@ -231,9 +264,10 @@ func generateItemHandler(c string) func(w http.ResponseWriter, r *http.Request) 
 				handleError(err, w)
 				return
 			}
-			// Mask the user's Password
+			// Mask the user's Password and salt
 			if c == collectionUser {
 				item.(*User).Password = nil
+				item.(*User).Salt = nil
 			}
 			writeJSONtoHTTP(item, w, http.StatusOK)
 			return
