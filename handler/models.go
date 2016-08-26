@@ -59,7 +59,7 @@ type RepeatReminder struct {
 
 // User represents a user
 type User struct {
-	ID                   string          `bson:"_id,omitempty" json:"-"`
+	ID                   bson.ObjectId   `bson:"_id,omitempty" json:"-"`
 	Username             string          `bson:"username" json:"username"`
 	Email                string          `bson:"email" json:"email"`
 	Firstname            string          `bson:"firstName" json:"firstName"`
@@ -150,19 +150,41 @@ func (u User) KeySet() bson.M {
 
 // SubGoal represents a common data for all goals
 type SubGoal struct {
-	Name        string  `bson:"name" json:"name"`
-	Description *string `bson:"description,omitempty" json:"description,omitempty"`
+	Name        string    `bson:"name" json:"name"`
+	Description *string   `bson:"description,omitempty" json:"description,omitempty"`
+	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
+}
+
+// Validate implements Validator's Validate on the SubGoal Object
+func (sg *SubGoal) Validate() error {
+	sg.CreatedAt = time.Now()
+	switch {
+	case len(sg.Name) == 0:
+		return newError(codeBadData, "attribute name is not provided")
+	}
+	return nil
 }
 
 // Goal represents a user's goal
 type Goal struct {
-	SubGoal
-	ID            string    `bson:"_id,omitempty" json:"-"`
-	User          string    `bson:"user" json:"user"`
-	PictureURL    *string   `bson:"pictureUrl,omitempty" json:"pictureUrl, omitempty"`
-	Status        string    `bson:"status" json:"status"`
-	Accessibility string    `bson:"accessibility" json:"accessibility"`
-	CreatedAt     time.Time `bson:"createdAt" json:"createdAt"`
+	ID            bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	*SubGoal      `bson:",inline"`
+	User          string  `bson:"user" json:"user"`
+	PictureURL    *string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty"`
+	Status        string  `bson:"status" json:"status"`
+	Accessibility string  `bson:"accessibility" json:"accessibility,omitempty"`
+}
+
+// Validate implements Validator's Validate
+func (g *Goal) Validate() error {
+	if err := g.SubGoal.Validate(); err != nil {
+		return err
+	}
+	switch {
+	case len(g.Accessibility) == 0:
+		return newError(codeBadData, "attribute accessibility is not provided")
+	}
+	return nil
 }
 
 // Cname implements Item's Cname
@@ -180,8 +202,8 @@ func (g Goal) KeySet() bson.M {
 
 // Habit represents a goal's habit
 type Habit struct {
-	SubGoal
-	ID       string `bson:"_id,omitempty" json:"-"`
+	ID       bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	*SubGoal `bson:",inline"`
 	User     string `bson:"user" json:"-"`
 	Goal     string `bson:"goal" json:"-"`
 	Reminder RepeatReminder
@@ -203,8 +225,8 @@ func (h Habit) KeySet() bson.M {
 
 // Task represents a goal's task
 type Task struct {
-	SubGoal
-	ID       string `bson:"_id,omitempty" json:"-"`
+	ID       bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	*SubGoal `bson:",inline"`
 	User     string `bson:"user" json:"-"`
 	Goal     string `bson:"goal" json:"-"`
 	Reminder Reminder
