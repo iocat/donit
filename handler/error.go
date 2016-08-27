@@ -4,16 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/iocat/donit/service/data"
 )
 
 const (
 	codeDecodeJSON = iota + 1
-	codeResourceNotFound
-	codeResourceDuplicate
-	codeBadData
 	codeBadForm
 	codeMethodNotAllowed
 	codeInternal
+
+	codeResourceNotFound
+	codeResourceDuplicate
+	codeBadData
 )
 
 var (
@@ -59,6 +62,18 @@ func newInternal(reason interface{}) Error {
 // NOTE+TODO: normal + non-serialized errors are considered internal error
 // TODO: log internal errors
 func handleError(err error, w http.ResponseWriter) {
+	// convert data service's error
+	switch {
+	case data.ErrBadData(err):
+		err = newError(codeBadData, err)
+	case data.ErrDuplicate(err):
+		err = newError(codeResourceDuplicate, err)
+	case data.ErrNotFound(err):
+		err = newError(codeResourceNotFound, err)
+	default:
+	}
+
+	// handle local package's error
 	if err, ok := err.(Error); ok {
 		switch err.Code {
 		case codeInternal:

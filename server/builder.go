@@ -24,22 +24,13 @@ func (sb *serverBuilder) router() *serverBuilder {
 	common := sb.r
 	common.NotFoundHandler = handler.NotFound
 	// Asign handlers
-
-	common.HandleFunc("/users", handler.Get("users"))
-	common.HandleFunc("/users/{user}", handler.Get("user"))
+	var resources = handler.GetResources()
+	for _, h := range resources {
+		col, ite := h.URL()
+		common.HandleFunc(col, h.Collection())
+		common.HandleFunc(ite, h.Item())
+	}
 	common.HandleFunc("/users/{user}/validate", handler.Get("validator"))
-
-	common.HandleFunc("/users/{user}/goals", handler.Get("goals"))
-	common.HandleFunc("/users/{user}/goals/{goal}", handler.Get("goal"))
-
-	common.HandleFunc("/users/{user}/followers", handler.Get("followers"))
-	common.HandleFunc("/users/{user}/followers/{follower}", handler.Get("follower"))
-
-	common.HandleFunc("/users/{user}/goals/{goal}/habits", handler.Get("habits"))
-	common.HandleFunc("/users/{user}/goals/{goal}/habits/{habit}", handler.Get("habit"))
-
-	common.HandleFunc("/users/{user}/goals/{goal}/tasks", handler.Get("tasks"))
-	common.HandleFunc("/users/{user}/goals/{goal}/tasks/{task}", handler.Get("task"))
 	return sb
 }
 
