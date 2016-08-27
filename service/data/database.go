@@ -65,7 +65,8 @@ func (db database) Read(item Item) error {
 	return nil
 }
 
-// Create creates a new item
+// Create creates a new item. Create also updates the object value in case new
+// id is generated
 func (db database) Create(item Item) error {
 	if v, ok := item.(Validator); ok {
 		if err := v.Validate(); err != nil {
