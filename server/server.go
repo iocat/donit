@@ -17,7 +17,10 @@ type Server struct {
 
 // New creates a new server
 func New(conf *Config) (*Server, error) {
-	sb := serverBuilder{conf: DefaultConfig}
+	if conf == nil {
+		conf = &DefaultConfig
+	}
+	sb := serverBuilder{conf: *conf}
 	server := sb.router().http().build()
 	return server, nil
 }

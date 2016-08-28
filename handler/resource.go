@@ -19,18 +19,33 @@ type Resource interface {
 	Item() func(w http.ResponseWriter, r *http.Request)
 }
 
-var dt data.Service
+func (res resource) URL() (string, string) {
+	url := ""
+	for i, src := range res.idSet {
+		if i != res.len()-1 {
+			url = fmt.Sprintf("%s/%ss/{%s}", url, src, src)
+		} else {
+			url = fmt.Sprintf("%s/%ss", url, src)
+		}
+	}
+	return url, fmt.Sprintf("%s/{%s}", url, res.idSet[len(res.idSet)-1])
+}
 
-var resources map[string]Resource
+type Handlers struct {
+	Resources map[string]Resource
+	Validator func(http.ResponseWriter, *http.Request)
+	dt        data.Service
+}
 
-func init() {
+// GetHandlers gets the handlers
+func New(databaseURL, dbName string) (*Handlers, error) {
 	var err error
-	dt, err = data.New()
+	dt, err := data.New(databaseURL, dbName)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("unable to create a data service: %s", err)
 	}
 
-	resources = map[string]Resource{
+	resources := map[string]Resource{
 		data.CollectionUser: &resource{
 			idSet: []string{"user"},
 			cname: data.CollectionUser,
@@ -62,24 +77,12 @@ func init() {
 			dt:    dt,
 		},
 	}
-}
-
-func (res resource) URL() (string, string) {
-	url := ""
-	for i, src := range res.idSet {
-		if i != res.len()-1 {
-			url = fmt.Sprintf("%s/%ss/{%s}", url, src, src)
-		} else {
-			url = fmt.Sprintf("%s/%ss", url, src)
-		}
+	h := &Handlers{
+		Resources: resources,
+		dt:        dt,
 	}
-	return url, fmt.Sprintf("%s/{%s}", url, res.idSet[len(res.idSet)-1])
-}
-
-// GetResources gets all the resources the handler can handle
-func GetResources() map[string]Resource {
-	return resources
-
+	h.Validator = h.validate
+	return h, nil
 }
 
 type idSet []string
@@ -187,7 +190,7 @@ func (res *resource) Collection() func(w http.ResponseWriter, r *http.Request) {
 				handleError(err, w)
 				return
 			}
-			generated, err := dt.Create(item)
+			generated, err := res.dt.Create(item)
 			if err != nil {
 				handleError(err, w)
 				return

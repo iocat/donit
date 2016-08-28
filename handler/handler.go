@@ -2,24 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/iocat/donit/service/data"
 )
 
-// Get gets the handler which does not deal directly with CRUD resources
-func Get(name string) http.HandlerFunc {
-	switch name {
-	case "validator":
-		return validate
-	default:
-		panic(fmt.Errorf("unsupported controller: %s", name))
-	}
-}
-
-func validate(w http.ResponseWriter, r *http.Request) {
+func (h Handlers) validate(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		handleError(errBadForm, w)
 		return
@@ -30,7 +19,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ids, err := resources[data.CollectionUser].getIDs(r)
+	ids, err := h.Resources[data.CollectionUser].getIDs(r)
 	if err != nil {
 		handleError(err, w)
 		return
@@ -42,12 +31,12 @@ func validate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	err = dt.Read(&user)
+	err = h.dt.Read(&user)
 	if err != nil {
 		handleError(err, w)
 		return
 	}
-	if *user.Password == dt.EncryptPassword(*user.Salt, password) {
+	if *user.Password == h.dt.EncryptPassword(*user.Salt, password) {
 		writeJSONtoHTTP(true, w, http.StatusOK)
 		return
 	}

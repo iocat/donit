@@ -105,11 +105,9 @@ func encryptPassword(salt string, password string) string {
 }
 
 // New creates a new data service
-func New() (Service, error) {
-	var defaultDatabaseURL = "127.0.0.1"
-	var defaultDatabaseName = "donit"
+func New(databaseURL string, databaseName string) (Service, error) {
 	// Connect to mongodb
-	mongo, err := mgo.DialWithTimeout(defaultDatabaseURL, 1*time.Second)
+	mongo, err := mgo.DialWithTimeout(databaseURL, 1*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("connect to mongodb: %s", err)
 	}
@@ -120,7 +118,7 @@ func New() (Service, error) {
 
 	d := &database{
 		session:  mongo,
-		Database: mongo.DB(defaultDatabaseName),
+		Database: mongo.DB(databaseName),
 	}
 	if err := d.setup(); err != nil {
 		return nil, fmt.Errorf("set up database: %s", err)

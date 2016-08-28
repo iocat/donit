@@ -25,13 +25,16 @@ func (sb *serverBuilder) router() *serverBuilder {
 	common := sb.r
 	common.NotFoundHandler = handler.NotFound
 	// Asign handlers
-	var resources = handler.GetResources()
-	for _, h := range resources {
+	handlers, err := handler.New(sb.conf.DBURL, sb.conf.DBName)
+	if err != nil {
+		panic(err)
+	}
+	for _, h := range handlers.Resources {
 		col, ite := h.URL()
 		common.HandleFunc(col, h.Collection())
 		common.HandleFunc(ite, h.Item())
 	}
-	common.HandleFunc("/users/{user}/validate", handler.Get("validator"))
+	common.HandleFunc("/users/{user}/validate", handlers.Validator)
 	return sb
 }
 
