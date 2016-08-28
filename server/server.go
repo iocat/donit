@@ -21,7 +21,10 @@ func New(conf *Config) (*Server, error) {
 		conf = &DefaultConfig
 	}
 	sb := serverBuilder{conf: *conf}
-	server := sb.router().http().build()
+	server, err := sb.router().http().build()
+	if err != nil {
+		return nil, fmt.Errorf("set up server: %s", err)
+	}
 	return server, nil
 }
 

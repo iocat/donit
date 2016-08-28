@@ -12,10 +12,14 @@ import (
 type serverBuilder struct {
 	Server
 	conf Config
+	err  error
 }
 
-func (sb *serverBuilder) build() *Server {
-	return &sb.Server
+func (sb *serverBuilder) build() (*Server, error) {
+	if sb.err != nil {
+		return nil, sb.err
+	}
+	return &sb.Server, nil
 }
 
 // setupRouter sets up the router with a prefedefined path
@@ -27,7 +31,8 @@ func (sb *serverBuilder) router() *serverBuilder {
 	// Asign handlers
 	handlers, err := handler.New(sb.conf.DBURL, sb.conf.DBName)
 	if err != nil {
-		panic(err)
+		sb.err = err
+		return sb
 	}
 	for _, h := range handlers.Resources {
 		col, ite := h.URL()

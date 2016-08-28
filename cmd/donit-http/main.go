@@ -22,7 +22,8 @@ func main() {
 	}
 	s, err := server.New(conf)
 	if err != nil {
-		fmt.Printf("%s:%s", os.Args[0], err)
+		fmt.Printf("%s: %s\n", os.Args[0], err)
+		return
 	}
 	s.Start()
 }
