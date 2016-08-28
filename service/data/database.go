@@ -66,20 +66,25 @@ func (db database) Read(item Item) error {
 }
 
 // Create creates a new item. Create also updates the object value in case new
-// id is generated
-func (db database) Create(item Item) error {
+// id is generated. The first returned argument signals a new id is created
+func (db database) Create(item Item) (*string, error) {
 	if v, ok := item.(Validator); ok {
 		if err := v.Validate(); err != nil {
-			return err
+			return nil, err
 		}
+	}
+	var generated *string
+	if item, ok := item.(IDGenerator); ok {
+		generated = new(string)
+		*generated = item.GenerateID()
 	}
 	if err := db.C(item.cname()).Insert(item); err != nil {
 		if mgo.IsDup(err) {
-			return errDuplicate
+			return generated, errDuplicate
 		}
-		return err
+		return generated, err
 	}
-	return nil
+	return generated, nil
 }
 
 func (db database) delete(col string, keys bson.M) error {

@@ -90,3 +90,8 @@ func (h *Habit) SetKeys(k []string) error {
 	}
 	return nil
 }
+
+func (h *Habit) GenerateID() string {
+	h.ID = bson.NewObjectId()
+	return h.ID.Hex()
+}

@@ -54,3 +54,8 @@ func (g *Goal) SetKeys(k []string) error {
 	}
 	return nil
 }
+
+func (g *Goal) GenerateID() string {
+	g.ID = bson.NewObjectId()
+	return g.ID.Hex()
+}

@@ -42,3 +42,8 @@ func (t *Task) SetKeys(k []string) error {
 	}
 	return nil
 }
+
+func (t *Task) GenerateID() string {
+	t.ID = bson.NewObjectId()
+	return t.ID.Hex()
+}

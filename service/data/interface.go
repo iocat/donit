@@ -26,6 +26,11 @@ type Validator interface {
 	Validate() error
 }
 
+// IdGenerator represents an item that can generate an ID
+type IDGenerator interface {
+	GenerateID() string
+}
+
 // Item represents an item that can be put into the database
 type Item interface {
 	// SetKeys sets the item keys using the provided list of id
@@ -48,7 +53,7 @@ type withSubCol interface {
 type iDatabase interface {
 	ReadCollection(col Collection) error
 	Read(item Item) error
-	Create(item Item) error
+	Create(item Item) (*string, error)
 	Update(item Item) error
 	Delete(item Item) error
 }

@@ -49,3 +49,8 @@ func (c *Comment) Validate() error {
 	c.At = time.Now()
 	return nil
 }
+
+func (c *Comment) GenerateID() string {
+	c.ID = bson.NewObjectId()
+	return c.ID.Hex()
+}
