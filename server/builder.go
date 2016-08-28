@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -39,7 +40,7 @@ func (sb *serverBuilder) router() *serverBuilder {
 func (sb *serverBuilder) http() *serverBuilder {
 	sb.httpServer = &http.Server{
 		Handler:      sb.r,
-		Addr:         "127.0.0.1:8080",
+		Addr:         fmt.Sprintf("%s:%d", sb.conf.Domain, sb.conf.Port),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
