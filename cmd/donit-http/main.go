@@ -14,6 +14,7 @@ var (
 )
 
 func main() {
+	flag.Parse()
 	conf := &server.Config{
 		Domain: server.DefaultConfig.Domain,
 		Port:   *port,
