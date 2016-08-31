@@ -2,20 +2,20 @@ package errors
 
 import "fmt"
 
-type validate struct {
+type Validate struct {
 	Field  string
 	Reason string
 }
 
 // Error implements the error interface
-func (v validate) Error() string {
+func (v Validate) Error() string {
 	return fmt.Sprintf("validate field %s: %s", v.Field, v.Reason)
 }
 
 // NewValidate returns an Validate error with the field and the reason for
 // that error
 func NewValidate(field string, reason string) error {
-	return &validate{
+	return &Validate{
 		Field:  field,
 		Reason: reason,
 	}
@@ -24,7 +24,7 @@ func NewValidate(field string, reason string) error {
 // IsValidate returns whether the error is the validation error or not
 func IsValidate(err error) bool {
 	switch err.(type) {
-	case validate, *validate:
+	case Validate, *Validate:
 		return true
 	default:
 		return false
@@ -32,19 +32,19 @@ func IsValidate(err error) bool {
 }
 
 // notFound represents the resource not found error
-type notFound struct {
+type NotFound struct {
 	ResourceName string
 	IdentifiedBy string
 }
 
 // Error implements the error interface
-func (nf notFound) Error() string {
+func (nf NotFound) Error() string {
 	return fmt.Sprintf("resource %s identified by %s is not found", nf.ResourceName, nf.IdentifiedBy)
 }
 
 // NewNotFound creates a new not found error
 func NewNotFound(resource string, key string) error {
-	return &notFound{
+	return &NotFound{
 		ResourceName: resource,
 		IdentifiedBy: key,
 	}
@@ -53,7 +53,7 @@ func NewNotFound(resource string, key string) error {
 // IsNotFound returns whether the error is not found or not
 func IsNotFound(err error) bool {
 	switch err.(type) {
-	case notFound, *notFound:
+	case NotFound, *NotFound:
 		return true
 	default:
 		return false
@@ -61,19 +61,19 @@ func IsNotFound(err error) bool {
 }
 
 // duplicated represents the duplicated error
-type duplicated struct {
+type Duplicated struct {
 	ResourceName string
 	IdentifiedBy string
 }
 
 // Error implements the error interface
-func (rd duplicated) Error() string {
+func (rd Duplicated) Error() string {
 	return fmt.Sprintf("resource %s identified by %s is duplicated", rd.ResourceName, rd.IdentifiedBy)
 }
 
 // NewDuplicated creates a resource duplicated error
 func NewDuplicated(name string, key string) error {
-	return &duplicated{
+	return &Duplicated{
 		ResourceName: name,
 		IdentifiedBy: key,
 	}
@@ -82,7 +82,7 @@ func NewDuplicated(name string, key string) error {
 // IsDuplicated returns whether the data has duplicated or not
 func IsDuplicated(err error) bool {
 	switch err.(type) {
-	case duplicated, *duplicated:
+	case Duplicated, *Duplicated:
 		return true
 	default:
 		return false
