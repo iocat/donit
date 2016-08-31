@@ -3,20 +3,18 @@ package errors
 import "fmt"
 
 type Validate struct {
-	Field  string
 	Reason string
 }
 
 // Error implements the error interface
 func (v Validate) Error() string {
-	return fmt.Sprintf("validate field %s: %s", v.Field, v.Reason)
+	return fmt.Sprintf("validate %s", v.Reason)
 }
 
 // NewValidate returns an Validate error with the field and the reason for
 // that error
-func NewValidate(field string, reason string) error {
+func NewValidate(reason string) error {
 	return &Validate{
-		Field:  field,
 		Reason: reason,
 	}
 }
