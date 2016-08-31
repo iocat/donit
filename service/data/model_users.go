@@ -25,17 +25,17 @@ type User struct {
 const (
 	statusOffline         = "OFFLINE"
 	statusOnlineAvailable = "ONLINE"
-	statusUnvailable      = "UNAVAILABLE"
+	statusBusy            = "BUSY"
 )
 
 func validateStatus(status string) error {
 	switch status {
-	case statusOffline, statusOnlineAvailable, statusUnvailable:
+	case statusOffline, statusOnlineAvailable, statusBusy:
 		return nil
 	default:
 		return newBadData(fmt.Sprintf("status %s is undefined(only %s, %s, and %s)",
 			status, statusOffline, statusOnlineAvailable,
-			statusUnvailable))
+			statusBusy))
 	}
 }
 
