@@ -2,6 +2,7 @@ package goals
 
 import (
 	"github.com/iocat/donit/internal/donitdoc/achievable"
+	valid "gopkg.in/asaskevich/govalidator.v4"
 )
 
 const (
@@ -13,11 +14,16 @@ const (
 	AccessPublic = "PUBLIC"
 )
 
+func init() {
+	valid.SetFieldsRequiredByDefault(true)
+	valid.CustomTypeTagMap.Set("goalAccessValidator", valid.CustomTypeValidator(GoalAccessValidatorFunc))
+}
+
 // Goal represents an achievable Goal
 type Goal struct {
-	achievable.Achievable `bson:"subGoal,inline"`
-	PictureURL            *string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty"`
-	Accessibility         string  `bson:"accessibility" json:"accessibility,omitempty"`
+	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
+	PictureURL            *string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
+	Accessibility         string  `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
 }
 
 // GoalAccessValidatorFunc validates the accessibility field of the Goal model

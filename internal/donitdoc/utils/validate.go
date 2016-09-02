@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/iocat/donit/internal/data/errors"
+	"github.com/iocat/donit/internal/donitdoc/errors"
 	valid "gopkg.in/asaskevich/govalidator.v4"
 )
 

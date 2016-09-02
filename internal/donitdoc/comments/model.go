@@ -3,13 +3,18 @@ package comments
 import (
 	"time"
 
+	valid "gopkg.in/asaskevich/govalidator.v4"
 	"gopkg.in/mgo.v2/bson"
 )
 
+func init() {
+	valid.SetFieldsRequiredByDefault(true)
+}
+
 // Comment represents a comment
 type Comment struct {
-	bson.ObjectId `bson:"_id,omitempty" json:"id"`
-	Content       string    `bson:"content" json:"content"`
-	At            time.Time `bson:"lastUpdated" json:"lastUpdated"`
-	Edited        *bool     `bson:"edited" json:"edited"`
+	bson.ObjectId `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Content       string    `bson:"content" json:"content" valid:"required,utfletternum,stringlength(0|1000)"`
+	At            time.Time `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
+	Edited        bool      `bson:"edited" json:"edited" valid:"-"`
 }

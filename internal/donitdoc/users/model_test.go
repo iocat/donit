@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/iocat/donit/internal/data/utils"
+	"github.com/iocat/donit/internal/donitdoc/utils"
 )
 
 func TestValidateStoredUser(t *testing.T) {
