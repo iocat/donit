@@ -27,6 +27,6 @@ type User struct {
 // StoredUser encapsulates user's password
 type StoredUser struct {
 	User     `valid:"required"`
-	Password *string `bson:"password" json:"password,omitempty" valid:"hexadecimal,optional"`
-	Salt     *string `bson:"salt" json:"-" valid:"alphanum,optional"`
+	Password string `bson:"password" json:"password,omitempty" valid:"hexadecimal,optional"`
+	Salt     string `bson:"salt" json:"-" valid:"alphanum,optional"`
 }

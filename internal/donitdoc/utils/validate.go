@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 
-	"github.com/iocat/donit/internal/donitdoc/errors"
 	valid "gopkg.in/asaskevich/govalidator.v4"
 )
 
@@ -23,7 +22,7 @@ func Validate(obj interface{}) error {
 				panic(fmt.Errorf("unexpected type %T", e))
 			}
 		}
-		return errors.NewValidate(got.Error())
+		return got
 	} else if err != nil {
 		return fmt.Errorf("validate %T error: %s", obj, err)
 	}

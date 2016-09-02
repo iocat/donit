@@ -1,6 +1,10 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+
+	"gopkg.in/mgo.v2"
+)
 
 const (
 	// User is the collection index for User
@@ -27,7 +31,7 @@ var mgoCollectionNames = []string{
 
 // GetMgoCollection returns the collection name corresponding to the index value
 // Index is the index name coded in this package
-func GetMgoCollection(code int) (string, error) {
+func getMGOCollectionName(code int) (string, error) {
 	if 0 <= code && code < len(mgoCollectionNames) {
 		if len(mgoCollectionNames[code]) == 0 {
 			return "", fmt.Errorf("collection name corresponding to index %d is not found", code)
@@ -36,4 +40,15 @@ func GetMgoCollection(code int) (string, error) {
 	}
 	return "", fmt.Errorf("collection index is out of range, got index %d, expected range is [%d,%d]",
 		code, 0, len(mgoCollectionNames)-1)
+}
+
+// MakeMGOCollectionFunc creates a collection generator function
+func MakeMGOCollectionFunc(code int) func(*mgo.Database) *mgo.Collection {
+	cname, err := getMGOCollectionName(code)
+	if err != nil {
+		panic(fmt.Errorf("get collection name: %s", err))
+	}
+	return func(db *mgo.Database) *mgo.Collection {
+		return db.C(cname)
+	}
 }
