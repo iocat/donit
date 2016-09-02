@@ -5,9 +5,12 @@ import (
 )
 
 const (
-	accessPrivate      = "PRIVATE"
-	accessForFollowers = "FOR_FOLLOWERS"
-	accessPublic       = "PUBLIC"
+	// AccessPrivate is private accessibility
+	AccessPrivate = "PRIVATE"
+	// AccessForFollowers is the accessibility for followers
+	AccessForFollowers = "FOR_FOLLOWERS"
+	// AccessPublic is the accessibility for public user
+	AccessPublic = "PUBLIC"
 )
 
 // Goal represents an achievable Goal
@@ -22,7 +25,7 @@ func GoalAccessValidatorFunc(value, _ interface{}) bool {
 	switch value := value.(type) {
 	case string:
 		switch value {
-		case accessPrivate, accessPublic, accessForFollowers:
+		case AccessPrivate, AccessPublic, AccessForFollowers:
 			return true
 		default:
 			return false

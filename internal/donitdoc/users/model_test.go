@@ -16,8 +16,8 @@ func TestValidateStoredUser(t *testing.T) {
 			data: `{
 				"username":"a",
 				"email":"felix",
-				"defaultAccess":"PRIVATE",
-				"status":"ONLINE"
+				"defaultAccess":"PRIVATE"
+				
 			}`,
 			valid: false,
 		},
@@ -26,8 +26,8 @@ func TestValidateStoredUser(t *testing.T) {
 				"username":"felixe",
 				"email":"feli@hotmail.cat",
 				"firstName":"thanh",
-				"lastName":"ngo",
-				"status":"RANDOM LONG VALUE"
+				"lastName":"ngo"
+				
 			}`,
 			valid: false,
 		}, {
@@ -36,7 +36,6 @@ func TestValidateStoredUser(t *testing.T) {
 				"email":"felix@gmail.com",
 				"firstName":"Thanh",
 				"lastName":"Ngo",
-				"status":"OFFLINE",
 				"defaultAccess":"PUBLIC"
 			}`,
 			valid: true,
@@ -46,7 +45,6 @@ func TestValidateStoredUser(t *testing.T) {
 				"email":"felix@gmail.com",
 				"firstName":"Thanh",
 				"lastName":"Ngo",
-				"status":"OFFLINE",
 				"defaultAccess":"PUBLIC",
 				"password":null
 			}`,
@@ -62,7 +60,6 @@ func TestValidateStoredUser(t *testing.T) {
 				"email":"felix@gmail.com",
 				"firstName":"Thanh",
 				"lastName":"Ngo",
-				"status":"OFFLINE",
 				"defaultAccess":"PUBLIC",
 				"password":"qwlkeqwjelwqjelqwjelwkqje"
 			}`,

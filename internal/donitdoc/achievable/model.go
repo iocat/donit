@@ -8,6 +8,5 @@ import "time"
 type Achievable struct {
 	Name        string    `bson:"name" json:"name"`
 	Description *string   `bson:"description,omitempty" json:"description,omitempty"`
-	Status      string    `bson:"status" json:"status"`
 	LastUpdated time.Time `bson:"createdAt" json:"createdAt"`
 }

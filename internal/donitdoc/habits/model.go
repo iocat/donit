@@ -7,6 +7,31 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const (
+	// EveryDay is the Cycle for Every day habit
+	EveryDay = "EVERYDAY"
+	// EveryWeekAndCustom is the cycle for every week habit
+	EveryWeekAndCustom = "EVERY_WEEK"
+	// EveryMonthAndCustom is the cycle for every month habit
+	EveryMonthAndCustom = "EVERY_MONTH"
+)
+const (
+	// Sunday represents Sunday
+	Sunday = iota + 1
+	// Monday represents Monday
+	Monday
+	// Tuesday represents Tuesday
+	Tuesday
+	// Wednesday represents Wednesday
+	Wednesday
+	// Thursday represents Thursday
+	Thursday
+	// Friday represents Friday
+	Friday
+	// Saturday represents Saturday
+	Saturday
+)
+
 // RepeatReminder represents a reminder for habit
 type RepeatReminder struct {
 	Cycle             string        `bson:"cycle" json:"cycle"`
