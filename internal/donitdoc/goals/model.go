@@ -22,8 +22,8 @@ func init() {
 // Goal represents an achievable Goal
 type Goal struct {
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
-	PictureURL            *string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
-	Accessibility         string  `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
+	PictureURL            string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
+	Accessibility         string `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
 }
 
 // GoalAccessValidatorFunc validates the accessibility field of the Goal model

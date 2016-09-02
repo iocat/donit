@@ -83,5 +83,5 @@ type RepeatReminder struct {
 type Habit struct {
 	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
-	*RepeatReminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"required"`
+	*RepeatReminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

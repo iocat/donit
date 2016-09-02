@@ -18,10 +18,10 @@ type User struct {
 	Email                string    `bson:"email" json:"email" valid:"required,email"`
 	Firstname            string    `bson:"firstName" json:"firstName" valid:"required,alpha,length(0|50)"`
 	Lastname             string    `bson:"lastName" json:"lastName" valid:"required,alpha,length(0|50)"`
-	DefaultAccessibility string    `bson:"defaultAccess" json:"defaultAccess" valid:"goalAccessField"`
+	DefaultAccessibility string    `bson:"defaultAccess" json:"defaultAccess" valid:"required,goalAccessField"`
+	PictureURL           *string   `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
 	LastUpdated          time.Time `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
 	HasUpdate            bool      `bson:"hasUpdated" json:"hasUpdated" valid:"-"`
-	PictureURL           *string   `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"URL,optional"`
 }
 
 // StoredUser encapsulates user's password
