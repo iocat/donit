@@ -7,8 +7,7 @@ import (
 	valid "gopkg.in/asaskevich/govalidator.v4"
 )
 
-// Validate validates the object and returns any error if the object's data
-// is inconsistent
+// Validate dispatches the validator on the object. Returns any error reported from the validator
 func Validate(obj interface{}) error {
 	if ok, err := valid.ValidateStruct(obj); !ok {
 		var got error
