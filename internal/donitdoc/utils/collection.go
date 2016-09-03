@@ -29,9 +29,9 @@ var mgoCollectionNames = []string{
 	Comment: "comments",
 }
 
-// GetMgoCollection returns the collection name corresponding to the index value
+// GetMGOCollectionName returns the collection name corresponding to the index value
 // Index is the index name coded in this package
-func getMGOCollectionName(code int) (string, error) {
+func GetMGOCollectionName(code int) (string, error) {
 	if 0 <= code && code < len(mgoCollectionNames) {
 		if len(mgoCollectionNames[code]) == 0 {
 			return "", fmt.Errorf("collection name corresponding to index %d is not found", code)
@@ -44,7 +44,7 @@ func getMGOCollectionName(code int) (string, error) {
 
 // MakeMGOCollectionFunc creates a collection generator function
 func MakeMGOCollectionFunc(code int) func(*mgo.Database) *mgo.Collection {
-	cname, err := getMGOCollectionName(code)
+	cname, err := GetMGOCollectionName(code)
 	if err != nil {
 		panic(fmt.Errorf("get collection name: %s", err))
 	}

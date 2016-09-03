@@ -3,6 +3,7 @@ package goals
 import (
 	"github.com/iocat/donit/internal/donitdoc/achievable"
 	valid "gopkg.in/asaskevich/govalidator.v4"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -21,6 +22,7 @@ func init() {
 
 // Goal represents an achievable Goal
 type Goal struct {
+	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
 	PictureURL            string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
 	Accessibility         string `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`

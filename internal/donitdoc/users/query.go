@@ -25,7 +25,7 @@ func CreateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User, p
 	// Encrypt the password
 	encrypted, salt, err := randomSaltEncryption(password)
 	if err != nil {
-		l.Log("ctx", context, "op", "users.Createdoc", "user", user, "result", fmt.Errorf("validation error: encryption: %s", err))
+		l.Log("ctx", context, "user", user, "result", fmt.Errorf("validation error: encryption: %s", err))
 		return errors.NewValidate(err.Error())
 	}
 	// Create a stored user
@@ -36,41 +36,45 @@ func CreateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User, p
 	}
 	// Evaluate user's data consistency
 	if err := utils.Validate(suser); err != nil {
-		l.Log("ctx", context, "op", "users.CreateDoc", "user", user, "result", fmt.Errorf("validation error: %s", err))
+		l.Log("ctx", context, "user", user, "result", fmt.Errorf("validation error: %s", err))
 		return errors.NewValidate(err.Error())
 	}
 	// Insert a stored user
 	if err := col(db).Insert(suser); err != nil {
 		if mgo.IsDup(err) {
-			l.Log("ctx", context, "op", "users.CreateDoc", "result", "DUPLICATED")
+			l.Log("ctx", context, "result", "DUPLICATED")
 			return errors.NewDuplicated("user", user.Username)
 		}
-		l.Log("ctx", context, "op", "users.CreateDoc", "result", fmt.Sprintf("error: %s", err))
+		l.Log("ctx", context, "result", fmt.Sprintf("error: %s", err))
 		return err
 	}
-	l.Log("ctx", context, "op", "users.CreateDoc", "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return nil
 }
 
-// UpsertDoc replaces a user's data (not included password and salt) and validates before replacement
-func UpsertDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User) error {
+// UpdateDoc replaces a user's data (not included password and salt) and validates before replacement
+func UpdateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User) error {
 	l.Log("ctx", context, "op", "users.UpdateDoc", "user", user.Username)
 	// Validate a user data
 	if err := utils.Validate(user); err != nil {
-		l.Log("ctx", context, "op", "users.UpsertDoc", "user", user, "result", fmt.Errorf("validation error: %s", err))
+		l.Log("ctx", context, "result", fmt.Errorf("validation error: %s", err))
 		return errors.NewValidate(err.Error())
 	}
 	// Upsert a user without replacing the password and salt
-	_, err := col(db).Upsert(bson.M{
+	err := col(db).Update(bson.M{
 		"username": user.Username,
 	}, bson.M{
 		"$set": user,
 	})
 	if err != nil {
-		l.Log("ctx", context, "op", "users.UpsertDoc", "result", fmt.Sprintf("error: %s", err))
+		if err == mgo.ErrNotFound {
+			l.Log("ctx", context, "result", "NOT_FOUND")
+			return errors.NewNotFound("user", user.Username)
+		}
+		l.Log("ctx", context, "result", fmt.Sprintf("error: %s", err))
 		return err
 	}
-	l.Log("ctx", context, "op", "users.UpsertDoc", "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return nil
 }
 
@@ -81,13 +85,13 @@ func DeleteDoc(l log.Logger, context utils.UUID, db *mgo.Database, username stri
 		"username": username,
 	}); err != nil {
 		if err == mgo.ErrNotFound {
-			l.Log("ctx", context, "op", "users.DeleteDoc", "user", username, "result", "NOT_FOUND")
+			l.Log("ctx", context, "result", "NOT_FOUND")
 			return errors.NewNotFound("user", username)
 		}
-		l.Log("ctx", context, "op", "users.DeleteDoc", "user", username, "result", fmt.Sprintf("error: %s", err))
+		l.Log("ctx", context, "result", fmt.Sprintf("error: %s", err))
 		return err
 	}
-	l.Log("ctx", context, "op", "users.DeleteDoc", "user", username, "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return nil
 }
 
@@ -99,13 +103,13 @@ func ReadDoc(l log.Logger, context utils.UUID, db *mgo.Database, username string
 		"username": username,
 	}).One(&user); err != nil {
 		if err == mgo.ErrNotFound {
-			l.Log("ctx", context, "op", "users.ReadDoc", "user", username, "result", "NOT_FOUND")
+			l.Log("ctx", context, "result", "NOT_FOUND")
 			return nil, errors.NewNotFound("user", username)
 		}
-		l.Log("ctx", context, "op", "users.ReadDoc", "user", username, "result", fmt.Errorf("error: %s", err))
+		l.Log("ctx", context, "result", fmt.Errorf("error: %s", err))
 		return nil, err
 	}
-	l.Log("ctx", context, "op", "users.ReadDoc", "user", username, "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return &user.User, nil
 }
 
@@ -121,17 +125,17 @@ func ValidatePassword(l log.Logger, context utils.UUID, db *mgo.Database, userna
 		"salt":     1,
 	}).One(&user); err != nil {
 		if err == mgo.ErrNotFound {
-			l.Log("ctx", context, "op", "users.ValidatePassword", "user", username, "result", "NOT_FOUND")
+			l.Log("ctx", context, "result", "NOT_FOUND")
 			return false, errors.NewNotFound("user", username)
 		}
-		l.Log("ctx", context, "op", "users.ValidatePassword", "user", username, "result", fmt.Sprintf("error: %s", err))
+		l.Log("ctx", context, "result", fmt.Sprintf("error: %s", err))
 		return false, err
 	}
 	if user.Password != encryptPassword(user.Salt, password) {
-		l.Log("ctx", context, "op", "users.ValidatePassword", "user", username, "result", "SUCCESS, WRONG PASSWORD")
+		l.Log("ctx", context, "result", "SUCCESS, WRONG PASSWORD")
 		return false, nil
 	}
-	l.Log("ctx", context, "op", "users.ValidatePassword", "user", username, "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return true, nil
 }
 
@@ -146,13 +150,13 @@ func ChangePassword(l log.Logger, context utils.UUID, db *mgo.Database, username
 	}
 	// Old password is incorrect
 	if !ok {
-		l.Log("ctx", context, "op", "users.ChangePassword", "user", username, "result", "validate old password: FAILED")
+		l.Log("ctx", context, "result", "validate old password: FAILED")
 		return errors.NewValidate("wrong old password")
 	}
 	// Encrypt the new password
 	encrypted, salt, err := randomSaltEncryption(new)
 	if err != nil {
-		l.Log("ctx", context, "op", "users.ChangePassword", "user", username, "result", fmt.Sprintf("validation error: encryption %s", err))
+		l.Log("ctx", context, "result", fmt.Sprintf("validation error: encryption %s", err))
 		return errors.NewValidate(err.Error())
 	}
 	// Change the password
@@ -165,12 +169,12 @@ func ChangePassword(l log.Logger, context utils.UUID, db *mgo.Database, username
 		},
 	}); err != nil {
 		if err == mgo.ErrNotFound {
-			l.Log("ctx", context, "op", "users.ChangePassword", "user", username, "result", "NOT FOUND")
+			l.Log("ctx", context, "result", "NOT FOUND")
 			return errors.NewNotFound("user", username)
 		}
-		l.Log("ctx", context, "op", "users.ChangePassword", "user", username, "result", fmt.Sprintf("update password on document: %s", err))
+		l.Log("ctx", context, "result", fmt.Sprintf("update password on document: %s", err))
 		return err
 	}
-	l.Log("ctx", context, "op", "users.ChangePassword", "user", username, "result", "SUCCESS")
+	l.Log("ctx", context, "result", "SUCCESS")
 	return nil
 }
