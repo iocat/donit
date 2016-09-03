@@ -1,5 +1,5 @@
 // Package donitdoc contains document modeling for all user's data and
-// brings all models together in one store service
+// encapsulate the models in store services
 // Every data is stored in MongoDB in terms of documents.
 //
 // Modeling in subpackages does not care about relationships between data and
