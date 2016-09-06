@@ -14,6 +14,7 @@ func init() {
 // Comment represents a comment
 type Comment struct {
 	bson.ObjectId `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Who           string    `bson:"username" json:"username" valid:"required,alphanum,length(1|30)"`
 	Content       string    `bson:"content" json:"content" valid:"required,utfletternum,stringlength(0|1000)"`
 	At            time.Time `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
 	Edited        bool      `bson:"edited" json:"edited" valid:"-"`

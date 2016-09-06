@@ -5,22 +5,25 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/iocat/donit/internal/donitdoc/errors"
-	"github.com/iocat/donit/internal/donitdoc/utils"
+	"github.com/iocat/donit/internal/donitdoc/internal/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
+
+// CollectionName for secondary indexing purpose
+var CollectionName = utils.User.MGOName()
 
 // col is collection getter function for user
 var col func(*mgo.Database) *mgo.Collection
 
 func init() {
-	col = utils.MakeMGOCollectionFunc(utils.User)
+	col = utils.User.Collection
 }
 
 // CreateDoc creates a new user, the provided password must not be encrypted.
 // CreateDoc also validates the user's data before doing as insertion
 // package user uses consistent encryption algorithm to encrypts the password
-func CreateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User, password string) error {
+func CreateDoc(l log.Logger, context string, db *mgo.Database, user *User, password string) error {
 	l.Log("ctx", context, "op", "users.CreateDoc", "user", user.Username)
 	// Encrypt the password
 	encrypted, salt, err := randomSaltEncryption(password)
@@ -53,7 +56,7 @@ func CreateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User, p
 }
 
 // UpdateDoc replaces a user's data (not included password and salt) and validates before replacement
-func UpdateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User) error {
+func UpdateDoc(l log.Logger, context string, db *mgo.Database, user *User) error {
 	l.Log("ctx", context, "op", "users.UpdateDoc", "user", user.Username)
 	// Validate a user data
 	if err := utils.Validate(user); err != nil {
@@ -79,7 +82,7 @@ func UpdateDoc(l log.Logger, context utils.UUID, db *mgo.Database, user *User) e
 }
 
 // DeleteDoc deletes a user
-func DeleteDoc(l log.Logger, context utils.UUID, db *mgo.Database, username string) error {
+func DeleteDoc(l log.Logger, context string, db *mgo.Database, username string) error {
 	l.Log("ctx", context, "op", "users.DeleteDoc", "user", username)
 	if err := col(db).Remove(bson.M{
 		"username": username,
@@ -96,7 +99,7 @@ func DeleteDoc(l log.Logger, context utils.UUID, db *mgo.Database, username stri
 }
 
 // ReadDoc reads a user data
-func ReadDoc(l log.Logger, context utils.UUID, db *mgo.Database, username string) (*User, error) {
+func ReadDoc(l log.Logger, context string, db *mgo.Database, username string) (*User, error) {
 	l.Log("ctx", context, "op", "users.ReadDoc", "user", username)
 	var user StoredUser
 	if err := col(db).Find(bson.M{
@@ -115,7 +118,7 @@ func ReadDoc(l log.Logger, context utils.UUID, db *mgo.Database, username string
 
 // ValidatePassword validates the user's password
 // TODO: inefficient: allocate a whole user to store just password + salt
-func ValidatePassword(l log.Logger, context utils.UUID, db *mgo.Database, username, password string) (bool, error) {
+func ValidatePassword(l log.Logger, context string, db *mgo.Database, username, password string) (bool, error) {
 	l.Log("ctx", context, "op", "users.ValidatePassword", "user", username)
 	var user StoredUser
 	if err := col(db).Find(bson.M{
@@ -141,7 +144,7 @@ func ValidatePassword(l log.Logger, context utils.UUID, db *mgo.Database, userna
 
 // ChangePassword changes the user's password. Caller needs to provide an old password for
 // authentication before changing the user's password
-func ChangePassword(l log.Logger, context utils.UUID, db *mgo.Database, username, old, new string) error {
+func ChangePassword(l log.Logger, context string, db *mgo.Database, username, old, new string) error {
 	// Evaluate old password
 	ok, err := ValidatePassword(l, context, db, username, old)
 	if err != nil {

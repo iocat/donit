@@ -18,11 +18,13 @@ const (
 func init() {
 	valid.SetFieldsRequiredByDefault(true)
 	valid.CustomTypeTagMap.Set("goalAccessValidator", valid.CustomTypeValidator(GoalAccessValidatorFunc))
+	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
 }
 
 // Goal represents an achievable Goal
 type Goal struct {
 	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Username              string `bson:"username" json:"username" valid:"required,alphanum,length(1|30)"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
 	PictureURL            string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
 	Accessibility         string `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`

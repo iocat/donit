@@ -38,6 +38,7 @@ func init() {
 	valid.SetFieldsRequiredByDefault(true)
 	valid.CustomTypeTagMap.Set("cycle", valid.CustomTypeValidator(validateCycle))
 	valid.CustomTypeTagMap.Set("daysInWeekOrMonth", valid.CustomTypeValidator(validateDaysInWeekOrMonth))
+	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
 }
 
 // validateCycle validates the Cycle field
@@ -82,6 +83,7 @@ type RepeatReminder struct {
 // Habit represents a goal's habit
 type Habit struct {
 	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Goal                  bson.ObjectId `bson:"goal" json:"-" valid:"required,hexadecimal"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
 	*RepeatReminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

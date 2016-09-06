@@ -10,6 +10,7 @@ import (
 
 func init() {
 	valid.SetFieldsRequiredByDefault(true)
+	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
 }
 
 // Reminder represents a reminder for tasks
@@ -21,6 +22,7 @@ type Reminder struct {
 // Task represents a task
 type Task struct {
 	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Goal                  bson.ObjectId `bson:"goal" json:"-" valid:"required, hexadecimal"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
 	*Reminder             `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

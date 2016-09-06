@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/iocat/donit/internal/donitdoc/errors"
-	"github.com/iocat/donit/internal/donitdoc/utils"
+	"github.com/iocat/donit/internal/donitdoc/internal/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -13,12 +13,12 @@ import (
 var col func(*mgo.Database) *mgo.Collection
 
 func init() {
-	col = utils.MakeMGOCollectionFunc(utils.Comment)
+	col = utils.Comment.Collection
 }
 
 // CreateDoc creates a new goal and returns a new id generated regardless of
 // the id inside the provided Goal object
-func CreateDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, c *Comment) (bson.ObjectId, error) {
+func CreateDoc(l log.Logger, ctx string, db *mgo.Database, c *Comment) (bson.ObjectId, error) {
 	l.Log("ctx", ctx, "op", "comments.CreateDoc", "comment", c)
 	// Generate a new id
 	c.ObjectId = bson.NewObjectId()
@@ -36,7 +36,7 @@ func CreateDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, c *Comment) (bson
 }
 
 // DeleteDoc deletes a goal
-func DeleteDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, id bson.ObjectId) error {
+func DeleteDoc(l log.Logger, ctx string, db *mgo.Database, id bson.ObjectId) error {
 	l.Log("ctx", ctx, "op", "comments.DeleteDoc", "goal", id)
 	if err := col(db).RemoveId(id); err != nil {
 		if err == mgo.ErrNotFound {
@@ -51,7 +51,7 @@ func DeleteDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, id bson.ObjectId)
 }
 
 // UpdateDoc updates a goal
-func UpdateDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, c *Comment) error {
+func UpdateDoc(l log.Logger, ctx string, db *mgo.Database, c *Comment) error {
 	l.Log("ctx", ctx, "op", "comments.UpdateDoc", "comment", c)
 	if err := utils.Validate(c); err != nil {
 		l.Log("ctx", ctx, "result", fmt.Errorf("validation error: %s", err))
@@ -70,7 +70,7 @@ func UpdateDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, c *Comment) error
 }
 
 // ReadDoc reads a goal from the database
-func ReadDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, id bson.ObjectId) (*Comment, error) {
+func ReadDoc(l log.Logger, ctx string, db *mgo.Database, id bson.ObjectId) (*Comment, error) {
 	l.Log("ctx", ctx, "op", "comments.ReadDoc", "comment", id)
 	var c Comment
 	if err := col(db).FindId(id).One(&c); err != nil {
@@ -83,4 +83,36 @@ func ReadDoc(l log.Logger, ctx utils.UUID, db *mgo.Database, id bson.ObjectId) (
 	}
 	l.Log("ctx", ctx, "result", "SUCCESS")
 	return &c, nil
+}
+
+// ALlDocsOfGoal gets all the goals associated with this goal
+func ALlDocsOfGoal(l log.Logger, ctx string, db *mgo.Database, goal bson.ObjectId, limit, offset int) ([]Comment, error) {
+	l.Log("ctx", ctx, "op", "tasks.AllDocsOfUser", "goal", goal, "limit", limit, "offset", offset)
+	var h []Comment
+	q := utils.Query{
+		Query: col(db).Find(bson.M{
+			"goal": goal,
+		}),
+	}
+	if err := q.Limit(limit).Skip(offset).All(&h); err != nil {
+		l.Log("ctx", ctx, "result", err)
+		return nil, nil
+	}
+	l.Log("ctx", ctx, "result", "SUCCESS")
+	return h, nil
+}
+
+// DeleteAllDocsOfGoal deletes all comments of the goal
+func DeleteAllDocsOfGoal(l log.Logger, ctx string, db *mgo.Database, goal bson.ObjectId) error {
+	l.Log("ctx", ctx, "op", "comments.DeleteAllDocsOfGoal", "goal", goal)
+	if _, err := col(db).RemoveAll(
+		bson.M{
+			"goal": goal,
+		},
+	); err != nil {
+		l.Log("ctx", ctx, "result", err)
+		return err
+	}
+	l.Log("ctx", ctx, "result", "SUCCESS")
+	return nil
 }
