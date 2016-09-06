@@ -1,0 +1,111 @@
+package utils
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
+	"github.com/iocat/donit/handler/internal/errors"
+	"github.com/satori/go.uuid"
+)
+
+// WriteJSONtoHTTP writes the object to the HTTP response with the provided http code
+// If no object is provided, the content of the response would be empty
+// TODO: log JSON error
+func WriteJSONtoHTTP(obj interface{}, w http.ResponseWriter, c int) {
+	const jsonContentType = "application/json; charset=utf-8"
+	// writeJSON writes the data to the output buffer
+	var writeJSON = func(obj interface{}, w io.Writer) error {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "\t")
+		if err := enc.Encode(obj); err != nil {
+			return fmt.Errorf("write JSON to HTTP response: %s", err)
+		}
+		return nil
+	}
+	w.Header().Set("Content-Type", jsonContentType)
+	w.WriteHeader(c)
+	if obj == nil {
+		return
+	}
+	// NOTE: ignore error here
+	// (*￣(ｴ)￣*) <- here's a cute bear, just in case you get angry
+	_ = writeJSON(obj, w)
+}
+
+// HandleError is an utility function to handle the error
+func HandleError(err error, w http.ResponseWriter) {
+	err = errors.ParseDocumentError(err)
+	// handle local package's error
+	if err, ok := err.(errors.Error); ok {
+		WriteJSONtoHTTP(err, w, err.Code.HTTPStatus())
+		return
+	}
+	// TODO: log the error
+	WriteJSONtoHTTP(nil, w, http.StatusInternalServerError)
+}
+
+// DecodeJSON reads the Reader and reflects the value into
+// the read object
+func DecodeJSON(r io.Reader, obj interface{}) error {
+	if err := json.NewDecoder(r).Decode(obj); err != nil {
+		return errors.ErrDecodeJSON
+	}
+	return nil
+}
+
+// GetLimitAndOffset gets the limit and the offset form values
+func GetLimitAndOffset(r *http.Request) (int, int, error) {
+	var offs, lim int
+	var err error
+	if err = r.ParseForm(); err != nil {
+		return -1, -1, errors.ErrInternal
+	}
+	stro := r.Form.Get("offset")
+	if len(stro) == 0 {
+		offs = 0
+	} else if offs, err = strconv.Atoi(stro); err != nil {
+		return -1, -1, errors.ErrBadData
+	}
+	strl := r.Form.Get("limit")
+	if len(strl) == 0 {
+		lim = -1
+	} else if lim, err = strconv.Atoi(strl); err != nil {
+		return -1, -1, errors.ErrBadData
+	}
+	return offs, lim, nil
+}
+
+// NewContextWithLog creates a new context decorated with logging UUID
+func NewContextWithLog() context.Context {
+	return context.WithValue(context.Background(), "log", uuid.NewV4().String())
+}
+
+// MuxGetParams gets the request's parameter from the HTTP request's URL
+func MuxGetParams(r *http.Request, params ...string) ([]string, error) {
+	v := mux.Vars(r)
+	var res = make([]string, len(params))
+	for _, p := range params {
+		r, ok := v[p]
+		if !ok {
+			return nil, errors.NewInternal("cannot find id for " + p)
+		}
+		res = append(res, r)
+	}
+	return res, nil
+}
+
+// ToExpand checks whether or not to expand the response body
+func ToExpand(r *http.Request) (bool, error) {
+	if err := r.ParseForm(); err != nil {
+		return false, errors.NewBadData(err)
+	}
+	if r.Form.Get("expand") == "true" {
+		return true, nil
+	}
+	return false, nil
+}
