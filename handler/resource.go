@@ -1,264 +1,267 @@
+// Copyright 2016 Thanh Ngo <felix.infinite@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package handler
 
 import (
-	"fmt"
+	"context"
 	"net/http"
+	"path/filepath"
+	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/iocat/donit/service/data"
+	"github.com/iocat/donit/handler/internal/errors"
+	"github.com/iocat/donit/handler/internal/service"
+	"github.com/iocat/donit/handler/internal/utils"
+	"github.com/iocat/donit/internal/donitdoc/followers"
+	"github.com/iocat/donit/internal/donitdoc/users"
+
+	docs "github.com/iocat/donit/internal/docgroup"
 )
 
-// Resource represents a resource which has 2 handlers
-type Resource interface {
-	item() (data.Item, error)
-	collection([]string, int, int) (data.Collection, error)
-	getIDs(*http.Request) ([]string, error)
-
-	URL() (string, string)
-	Collection() func(w http.ResponseWriter, r *http.Request)
-	Item() func(w http.ResponseWriter, r *http.Request)
+func init() {
+	// TODO: set up services and database (service package)
 }
 
-func (res resource) URL() (string, string) {
-	url := ""
-	for i, src := range res.idSet {
-		if i != res.len()-1 {
-			url = fmt.Sprintf("%s/%ss/{%s}", url, src, src)
+// Endpoint serializes the HTTP endpoint
+type Endpoint byte
+
+const (
+	// User represents the user endpoint
+	User Endpoint = iota
+	// Follower represents the follower endpoint
+	Follower
+	// Goal represents the goal endpoint
+	Goal
+	// Comment represents the comment endpoint
+	Comment
+	// Habit represents the habit endpoint
+	Habit
+	// Task represents the task endpoint
+	Task
+)
+
+// URL gets the URL of the endpoint (resource)
+func (e Endpoint) url() string {
+	var endpointURL = []string{
+		User:     "/users/{user}/goals/{goal}",
+		Follower: "/users/{user}/followers/{follower}",
+		Goal:     "/users/{user}/goals/{goal}",
+		Comment:  "/users/{user}/goals/{goal}/comments/{comment}",
+		Habit:    "/users/{user}/goals/{goal}/habits/{habit}",
+		Task:     "/users/{user}/goals/{goal}/tasks/{task}",
+	}
+	return endpointURL[e]
+}
+
+// CollectionHandler ....
+// TODO
+func (e Endpoint) CollectionHandler() (string, http.HandlerFunc) {
+	return e.baseURL(), UsersHandler
+}
+
+// ResourceHandler ....
+// TODO
+func (e Endpoint) ResourceHandler() (string, http.HandlerFunc) {
+	return e.url(), UserHandler
+}
+
+// BaseURL gets the URL of the endpoint (collection)
+func (e Endpoint) baseURL() string {
+	return filepath.Dir(e.url())
+}
+
+var baseContext = context.Background()
+
+// UsersHandler handles the operations on the user collection
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.NewContextWithLog()
+	switch r.Method {
+	case "POST":
+		var user docs.User
+		if err := utils.DecodeJSON(r.Body, &user); err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		var getPassword = func(r *http.Request) (string, error) {
+			if err := r.ParseForm(); err != nil {
+				return "", errors.ErrBadData
+			}
+			password := r.Form.Get("password")
+			if len(password) == 0 {
+				return "", errors.NewBadData("password not provided")
+			}
+			return password, nil
+		}
+		password, err := getPassword(r)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		err = service.User.Create(ctx, user.User, password)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
+	default:
+		utils.HandleError(errors.ErrMethodNotAllowed, w)
+		return
+	}
+}
+
+// UserHandler handles the operations on the user collection
+func UserHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.NewContextWithLog()
+	switch r.Method {
+	case "GET":
+		var user = docs.User{
+			User: &users.User{},
+		}
+		// Check whether to expand the result
+		toExpand, err := utils.ToExpand(r)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		// Get the id
+		ids, err := utils.MuxGetParams(r, "user")
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		username := ids[0]
+		user.Username = username
+		// Get the user
+		if toExpand {
+			err := user.Read(ctx)
+			if err != nil {
+				utils.HandleError(err, w)
+				return
+			}
 		} else {
-			url = fmt.Sprintf("%s/%ss", url, src)
+			user.User, err = service.User.Read(ctx, username)
+			if err != nil {
+				utils.HandleError(err, w)
+				return
+			}
 		}
+		utils.WriteJSONtoHTTP(user, w, http.StatusOK)
+	case "PUT":
+		var user = users.User{}
+		if err := utils.DecodeJSON(r.Body, &user); err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		// Get the username
+		ids, err := utils.MuxGetParams(r, "user")
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		user.Username = ids[0]
+		// Update
+		if err := service.User.Update(ctx, &user); err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
+	case "DELETE":
+		// Get the username
+		ids, err := utils.MuxGetParams(r, "user")
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		err = service.User.Delete(ctx, ids[0])
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
+	default:
+		utils.HandleError(errors.ErrMethodNotAllowed, w)
+		return
 	}
-	return url, fmt.Sprintf("%s/{%s}", url, res.idSet[len(res.idSet)-1])
 }
 
-type Handlers struct {
-	Resources map[string]Resource
-	Validator func(http.ResponseWriter, *http.Request)
-	dt        data.Service
-}
-
-// GetHandlers gets the handlers
-func New(databaseURL, dbName string) (*Handlers, error) {
-	var err error
-	dt, err := data.New(databaseURL, dbName)
+// FollowersHandler handlers the operations on the followers collection
+func FollowersHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.NewContextWithLog()
+	// Get the username
+	ids, err := utils.MuxGetParams(r, "user")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a data service: %s", err)
+		utils.HandleError(err, w)
+		return
 	}
-
-	resources := map[string]Resource{
-		data.CollectionUser: &resource{
-			idSet: []string{"user"},
-			cname: data.CollectionUser,
-			dt:    dt,
-		},
-		data.CollectionGoal: &resource{
-			idSet: []string{"user", "goal"},
-			cname: data.CollectionGoal,
-			dt:    dt,
-		},
-		data.CollectionFollower: &resource{
-			idSet: []string{"user", "follower"},
-			cname: data.CollectionFollower,
-			dt:    dt,
-		},
-		data.CollectionHabit: &resource{
-			idSet: []string{"user", "goal", "habit"},
-			cname: data.CollectionHabit,
-			dt:    dt,
-		},
-		data.CollectionTask: &resource{
-			idSet: []string{"user", "goal", "task"},
-			cname: data.CollectionTask,
-			dt:    dt,
-		},
-		data.CollectionComment: &resource{
-			idSet: []string{"user", "goal", "comment"},
-			cname: data.CollectionComment,
-			dt:    dt,
-		},
+	username := ids[0]
+	switch r.Method {
+	case "GET":
+		lim, off, err := utils.GetLimitAndOffset(r)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		fs, err := service.User.AllFollowers(ctx, username, lim, off)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		utils.WriteJSONtoHTTP(fs, w, http.StatusOK)
+	case "POST":
+		follower := followers.Follower{}
+		if err := utils.DecodeJSON(r.Body, follower); err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		follower.FollowAt, follower.Username = time.Now(), username
+		err := service.Follower.Follows(ctx, &follower)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
+	default:
+		utils.HandleError(errors.ErrMethodNotAllowed, w)
+		return
 	}
-	h := &Handlers{
-		Resources: resources,
-		dt:        dt,
-	}
-	h.Validator = h.validate
-	return h, nil
 }
 
-type idSet []string
-
-func (is idSet) IDNames() ([]string, string) {
-	return is[:is.len()-1], is[is.len()-1]
-}
-
-func (is idSet) len() int {
-	return len(is)
-}
-
-type resource struct {
-	dt    data.Service
-	cname string
-	idSet
-}
-
-// item gets an empty item corresponding to this resource
-func (res *resource) item() (data.Item, error) {
-	item, err := res.dt.Item(res.cname)
+// FollowerHandler handles the operations on the follower resource
+func FollowerHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.NewContextWithLog()
+	// Get the username
+	ids, err := utils.MuxGetParams(r, "user", "follower")
 	if err != nil {
-		return nil, err
+		utils.HandleError(err, w)
+		return
 	}
-	return item, nil
-}
-
-// get a readonly data.Collection
-func (res *resource) collection(ids []string, limit, offset int) (data.Collection, error) {
-	col, err := res.dt.Collection(res.cname, ids, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	return col, nil
-}
-
-// getIds gets the parent ids and attempts to get the child id. If the child id
-// doesn't exist getIds will skip the child id
-func (res *resource) getIDs(r *http.Request) ([]string, error) {
-	ids := make([]string, 0, res.len())
-	keys := mux.Vars(r)
-	for _, k := range res.idSet[0 : res.len()-1] {
-		id, ok := keys[k]
-		if !ok {
-			return nil, newError(codeInternal, fmt.Sprintf("unable to recognize required key: want %s", k))
-		}
-		ids = append(ids, id)
-	}
-	id, ok := keys[res.idSet[res.len()-1]]
-	if !ok {
-		return ids, nil
-	}
-	ids = append(ids, id)
-
-	return ids, nil
-}
-
-func (res *resource) Collection() func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ids, err := res.getIDs(r)
-		if err != nil {
-			handleError(err, w)
+	username, follower := ids[0], ids[1]
+	switch r.Method {
+	case "DELETE":
+		if err := service.Follower.Unfollows(ctx, username, follower); err != nil {
+			utils.HandleError(err, w)
 			return
 		}
-		switch r.Method {
-		case "GET":
-			// Does not allow get method on the user's collection
-			if res.cname == data.CollectionUser {
-				handleError(errMethodNotAllowed, w)
-				return
-			}
-			// Get limit and offset fields
-			off, lim, err := getLimitAndOffset(r)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			// Create the corresponding collection
-			col, err := res.collection(ids, lim, off)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			// Read the collection
-			err = res.dt.ReadCollection(col)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			writeJSONtoHTTP(col.Items(), w, http.StatusOK)
-			return
-		case "POST":
-			item, err := res.item()
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			err = decodeBodyIntoItem(item, r)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			err = item.SetKeys(ids)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			generated, err := res.dt.Create(item)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			var location = r.URL.EscapedPath()
-			if generated != nil {
-				location = fmt.Sprintf("%s/%s", location, *generated)
-				w.Header().Add("Location", location)
-			}
-			writeJSONtoHTTP(item, w, http.StatusCreated)
-		default:
-			handleError(errMethodNotAllowed, w)
-			return
-		}
+		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
+	default:
+		utils.HandleError(errors.ErrMethodNotAllowed, w)
+		return
 	}
 }
 
-func (res *resource) Item() func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		item, err := res.item()
-		if err != nil {
-			handleError(err, w)
-			return
-		}
-		ids, err := res.getIDs(r)
-		if err != nil {
-			handleError(err, w)
-			return
-		}
-		err = item.SetKeys(ids)
-		if err != nil {
-			handleError(err, w)
-			return
-		}
-		switch r.Method {
-		case "GET":
-			err := res.dt.Read(item)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			// Mask the user's Password and salt
-			if res.cname == data.CollectionUser {
-				item.(*data.User).Password = nil
-				item.(*data.User).Salt = nil
-			}
-			writeJSONtoHTTP(item, w, http.StatusOK)
-			return
-		case "PUT":
-			err := decodeBodyIntoItem(item, r)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-			err = res.dt.Update(item)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-		case "DELETE":
-			err := res.dt.Delete(item)
-			if err != nil {
-				handleError(err, w)
-				return
-			}
-		default:
-			handleError(errMethodNotAllowed, w)
-			return
-		}
-	}
-}
+// TODO:
+// 		Write handlers for comments
+//		Write handlers for goals
+// 		Write handlers for habits
+// 		Write handlers for tasks
