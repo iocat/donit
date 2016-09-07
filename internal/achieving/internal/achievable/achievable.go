@@ -12,10 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package achievable contains goal's achievable task data
 package achievable
 
-import (
-	"time"
+import "time"
+
+const (
+	// Done represents achievable done status
+	Done = "DONE"
+	// NotDone represents achievable not done status
+	NotDone = "NOT_DONE"
+	// InProgress represents achievable InProgress status
+	InProgress = "IN_PROGRESS"
 )
 
 // Achievable represents an achievable action
@@ -27,15 +35,6 @@ type Achievable struct {
 	LastUpdated time.Time `bson:"createdAt" json:"createdAt" valid:"-"`
 	Status      string    `bson:"status" json:"status" valid:"validateStatus"`
 }
-
-const (
-	// Done represents achievable done status
-	Done = "DONE"
-	// NotDone represents achievable not done status
-	NotDone = "NOT_DONE"
-	// InProgress represents achievable InProgress status
-	InProgress = "IN_PROGRESS"
-)
 
 // ValidateStatus validates the status field
 func ValidateStatus(value, _ interface{}) bool {
@@ -50,4 +49,9 @@ func ValidateStatus(value, _ interface{}) bool {
 	default:
 		panic("the status field must be a string")
 	}
+}
+
+// HasAchieved returns whether achievable object is achieved or not
+func (a Achievable) HasAchieved() bool {
+	return a.Status == Done
 }

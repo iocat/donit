@@ -12,24 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package comments
+package utils
 
-import (
-	"time"
+import "gopkg.in/mgo.v2/bson"
 
-	valid "gopkg.in/asaskevich/govalidator.v4"
-	"gopkg.in/mgo.v2/bson"
-)
-
-func init() {
-	valid.SetFieldsRequiredByDefault(true)
-}
-
-// Comment represents a comment
-type Comment struct {
+type HexID struct {
 	bson.ObjectId `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
-	Who           string    `bson:"username" json:"username" valid:"required,alphanum,length(1|30)"`
-	Content       string    `bson:"content" json:"content" valid:"required,utfletternum,stringlength(0|1000)"`
-	At            time.Time `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
-	Edited        bool      `bson:"edited" json:"edited" valid:"-"`
 }

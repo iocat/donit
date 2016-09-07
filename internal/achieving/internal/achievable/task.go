@@ -12,20 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tasks
+package achievable
 
 import (
 	"time"
 
-	"github.com/iocat/donit/internal/donitdoc/achievable"
-	valid "gopkg.in/asaskevich/govalidator.v4"
+	"github.com/iocat/donit/internal/achieving/utils"
 	"gopkg.in/mgo.v2/bson"
 )
-
-func init() {
-	valid.SetFieldsRequiredByDefault(true)
-	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
-}
 
 // Reminder represents a reminder for tasks
 type Reminder struct {
@@ -35,8 +29,8 @@ type Reminder struct {
 
 // Task represents a task
 type Task struct {
-	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
-	Goal                  bson.ObjectId `bson:"goal" json:"-" valid:"required, hexadecimal"`
-	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
-	*Reminder             `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
+	utils.HexID `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Goal        bson.ObjectId `bson:"goal" json:"-" valid:"required, hexadecimal"`
+	Achievable  `bson:"subGoal,inline" valid:"required"`
+	*Reminder   `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

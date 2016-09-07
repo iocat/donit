@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package goals
+// Package goal contains goal data
+package goal
 
 import (
-	"github.com/iocat/donit/internal/donitdoc/achievable"
+	"github.com/iocat/donit/internal/achieving/internal/achievable"
+	"github.com/iocat/donit/internal/achieving/utils"
 	valid "gopkg.in/asaskevich/govalidator.v4"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -37,11 +38,18 @@ func init() {
 
 // Goal represents an achievable Goal
 type Goal struct {
-	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	utils.HexID           `bson:"id,inline" valid:"required"`
 	Username              string `bson:"username" json:"username" valid:"required,alphanum,length(1|30)"`
 	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
-	PictureURL            string `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
-	Accessibility         string `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
+	PictureURL            string                  `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
+	Accessibility         string                  `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
+	ToDo                  []achievable.Achievable `bson:"-" json:"todo" valid:"-"`
+}
+
+// SetID sets the user's id
+func (g *Goal) SetID(username string, id utils.HexID) {
+	g.Username = username
+	g.HexID = id
 }
 
 // GoalAccessValidatorFunc validates the accessibility field of the Goal model
@@ -57,4 +65,8 @@ func GoalAccessValidatorFunc(value, _ interface{}) bool {
 	default:
 		panic("the accessibility field must be a string")
 	}
+}
+
+func (g *Goal) ToDoTasks() []achievable.Achievable {
+	return g.ToDo
 }

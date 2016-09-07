@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package habits
+package achievable
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/iocat/donit/internal/donitdoc/achievable"
-	valid "gopkg.in/asaskevich/govalidator.v4"
+	"github.com/iocat/donit/internal/achieving/utils"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -48,15 +47,8 @@ const (
 	Saturday
 )
 
-func init() {
-	valid.SetFieldsRequiredByDefault(true)
-	valid.CustomTypeTagMap.Set("cycle", valid.CustomTypeValidator(validateCycle))
-	valid.CustomTypeTagMap.Set("daysInWeekOrMonth", valid.CustomTypeValidator(validateDaysInWeekOrMonth))
-	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
-}
-
 // validateCycle validates the Cycle field
-func validateCycle(v, _ interface{}) bool {
+func ValidateCycle(v, _ interface{}) bool {
 	switch v := v.(type) {
 	case string:
 		switch v {
@@ -72,7 +64,7 @@ func validateCycle(v, _ interface{}) bool {
 
 // validateDaysInWeekOrMonth validates the DaysInWeekOrMonth field
 // The day range should be in (0,31]
-func validateDaysInWeekOrMonth(v, _ interface{}) bool {
+func ValidateDaysInWeekOrMonth(v, _ interface{}) bool {
 	switch v := v.(type) {
 	case map[int]bool:
 		for k := range v {
@@ -96,8 +88,8 @@ type RepeatReminder struct {
 
 // Habit represents a goal's habit
 type Habit struct {
-	bson.ObjectId         `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
-	Goal                  bson.ObjectId `bson:"goal" json:"-" valid:"required,hexadecimal"`
-	achievable.Achievable `bson:"subGoal,inline" valid:"required"`
-	*RepeatReminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
+	utils.HexID     `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
+	Goal            bson.ObjectId `bson:"goal" json:"-" valid:"required,hexadecimal"`
+	Achievable      `bson:"subGoal,inline" valid:"required"`
+	*RepeatReminder `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

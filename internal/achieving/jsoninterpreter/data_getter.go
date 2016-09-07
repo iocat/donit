@@ -12,5 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package utils contains utility functions that the data models use
-package utils
+package jsoninterpreter
+
+// DataGetter allows the object to return a concrete exported data
+// exposed to the client
+type DataGetter interface {
+	GetData() interface{}
+}
