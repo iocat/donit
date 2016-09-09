@@ -17,9 +17,6 @@ package achievable
 import (
 	"fmt"
 	"time"
-
-	"github.com/iocat/donit/internal/achieving/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -47,7 +44,7 @@ const (
 	Saturday
 )
 
-// validateCycle validates the Cycle field
+// ValidateCycle validates the Cycle field
 func ValidateCycle(v, _ interface{}) bool {
 	switch v := v.(type) {
 	case string:
@@ -62,7 +59,7 @@ func ValidateCycle(v, _ interface{}) bool {
 	}
 }
 
-// validateDaysInWeekOrMonth validates the DaysInWeekOrMonth field
+// ValidateDaysInWeekOrMonth validates the DaysInWeekOrMonth field
 // The day range should be in (0,31]
 func ValidateDaysInWeekOrMonth(v, _ interface{}) bool {
 	switch v := v.(type) {
@@ -84,12 +81,4 @@ type RepeatReminder struct {
 	DaysInWeekOrMonth map[int]bool  `bson:"days" json:"repeat_on" valid:"required,daysInWeekOrMonth"`
 	TimeInDay         time.Duration `bson:"remindAt" json:"remindAt" valid:"-"`
 	Duration          time.Duration `bson:"duration" json:"duration" valid:"-"`
-}
-
-// Habit represents a goal's habit
-type Habit struct {
-	utils.HexID     `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
-	Goal            bson.ObjectId `bson:"goal" json:"-" valid:"required,hexadecimal"`
-	Achievable      `bson:"subGoal,inline" valid:"required"`
-	*RepeatReminder `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
 }

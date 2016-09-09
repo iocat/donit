@@ -32,7 +32,7 @@ import (
 
 func init() {
 	valid.SetFieldsRequiredByDefault(true)
-	valid.CustomTypeTagMap.Set("goalAccessField", valid.CustomTypeValidator(goal.GoalAccessValidatorFunc))
+	valid.CustomTypeTagMap.Set("goalAccessField", valid.CustomTypeValidator(goal.AccessValidatorFunc))
 	valid.CustomTypeTagMap.Set("validateUserStatus", valid.CustomTypeValidator(user.ValidateUserStatus))
 	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
 	valid.CustomTypeTagMap.Set("cycle", valid.CustomTypeValidator(achievable.ValidateCycle))

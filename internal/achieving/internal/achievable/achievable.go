@@ -15,7 +15,11 @@
 // Package achievable contains goal's achievable task data
 package achievable
 
-import "time"
+import (
+	"time"
+
+	"github.com/iocat/donit/internal/achieving/utils"
+)
 
 const (
 	// Done represents achievable done status
@@ -26,14 +30,32 @@ const (
 	InProgress = "IN_PROGRESS"
 )
 
+// Reminder represents a reminder for tasks
+type Reminder struct {
+	At       time.Time     `bson:"remindAt" json:"remindAt" valid:"-"`
+	Duration time.Duration `bson:"duration" json:"duration" valid:"-"`
+}
+
 // Achievable represents an achievable action
-// Achievable IS NOT a document in database, it is meant to be embedded
-// inside other documents
 type Achievable struct {
-	Name        string    `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
-	Description string    `bson:"description,omitempty" json:"description,omitempty" valid:"optional,utfletternum,stringlength(1|400)"`
-	LastUpdated time.Time `bson:"createdAt" json:"createdAt" valid:"-"`
-	Status      string    `bson:"status" json:"status" valid:"validateStatus"`
+	utils.HexID    `bson:"_id,inline" valid:"required"`
+	Goal           utils.HexID     `json:"ofGoal" valid:"required"`
+	Name           string          `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
+	Description    string          `bson:"description,omitempty" json:"description,omitempty" valid:"optional,utfletternum,stringlength(1|400)"`
+	LastUpdated    time.Time       `bson:"createdAt" json:"createdAt" valid:"-"`
+	Status         string          `bson:"status" json:"status" valid:"validateStatus"`
+	Reminder       *Reminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"required"`
+	RepeatReminder *RepeatReminder `bson:"repreatedReminder,omitempty" json:"repeatedReminder,omitempty" valid:"required"`
+}
+
+// IsHabit returns whether this is a habit
+func (a *Achievable) IsHabit() bool {
+	return a.RepeatReminder != nil
+}
+
+// IsTask returns whether this is a task or not
+func (a *Achievable) IsTask() bool {
+	return a.RepeatReminder == nil
 }
 
 // ValidateStatus validates the status field

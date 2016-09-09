@@ -14,7 +14,14 @@
 
 package errors
 
-import "fmt"
+import (
+	stderr "errors"
+	"fmt"
+)
+
+// ErrAuthentication represents an authentication error due to
+// wrong password
+var ErrAuthentication = stderr.New("invalid username or password")
 
 // Validate represents validation error
 type Validate struct {

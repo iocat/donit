@@ -43,22 +43,24 @@ func (us Store) RetrieveUser(username string, expand bool) (achieving.User, erro
 }
 
 // CreateNewUser creates a new user using the provided username and password
-func (us Store) CreateNewUser(userdata achieving.User, password string) error {
+func (us Store) CreateNewUser(user achieving.User, password string) error {
+
 	return nil
 }
 
 // DeleteUser deletes a user using the provided username and password
-func (us Store) DeleteUser(string, string) error {
+func (us Store) DeleteUser(username, password string) error {
+
 	return nil
 }
 
 // Authenticate authenticates the username and password
-func (us Store) Authenticate(string, string) (bool, error) {
+func (us Store) Authenticate(username, password string) (bool, error) {
 
 	return false, nil
 }
 
 // ChangePassword changes a user password
-func (us Store) ChangePassword(string, string, string) error {
+func (us Store) ChangePassword(username, password string) error {
 	return nil
 }

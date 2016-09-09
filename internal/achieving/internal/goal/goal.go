@@ -16,6 +16,9 @@
 package goal
 
 import (
+	"fmt"
+
+	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/achievable"
 	"github.com/iocat/donit/internal/achieving/utils"
 	"gopkg.in/mgo.v2"
@@ -57,7 +60,7 @@ func AccessValidatorFunc(value, _ interface{}) bool {
 }
 
 // RetrieveHabit gets the habit list
-func (g *Goal) retrieve(list interface{}, a *mgo.Collection, limit, offset int) error {
+func (g *Goal) retrieve(list *[]achievable.Achievable, a *mgo.Collection, limit, offset int) error {
 	q := a.Find(bson.M{
 		"goal": g.HexID,
 	})
@@ -72,4 +75,54 @@ func (g *Goal) retrieve(list interface{}, a *mgo.Collection, limit, offset int) 
 		return err
 	}
 	return nil
+}
+
+// RemoveAchievable removes a habit
+func (g *Goal) RemoveAchievable(ac *mgo.Collection, id utils.HexID) error {
+	err := ac.Remove(bson.M{
+		"goal": g.HexID,
+		"_id":  id,
+	})
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return errors.NewNotFound("achievable", fmt.Sprintf("%s,%s", g.HexID, id))
+		}
+	}
+	return nil
+}
+
+// UpdateAchievable updates an achievable task
+func (g *Goal) UpdateAchievable(ac *mgo.Collection, a *achievable.Achievable, id utils.HexID) error {
+	err := ac.Update(bson.M{
+		"goal": g.HexID,
+		"_id":  id,
+	}, a)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return errors.NewNotFound("habit", fmt.Sprintf("%s,%s", g.HexID, id))
+		}
+	}
+	return nil
+}
+
+// RetrieveAchievable gets the habit list
+func (g *Goal) RetrieveAchievable(ac *mgo.Collection, limit, offset int) ([]achievable.Achievable, error) {
+	var h []achievable.Achievable
+	err := g.retrieve(&h, ac, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return h, nil
+}
+
+// AddAchievable adds a habit
+func (g *Goal) AddAchievable(ac *mgo.Collection, a *achievable.Achievable) (utils.HexID, error) {
+	id := utils.HexID{ObjectId: bson.NewObjectId()}
+	a.Goal, a.HexID = g.HexID, id
+	err := ac.Insert(a)
+	if err != nil {
+		// Does not catch duplication error
+		return id, err
+	}
+	return id, nil
 }

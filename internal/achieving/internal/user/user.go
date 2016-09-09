@@ -26,6 +26,30 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const (
+	// Offline represents user offline status
+	Offline = "OFFLINE"
+	// OnlineAvailable represents user online status
+	OnlineAvailable = "ONLINE"
+	// Busy represents user busy status
+	Busy = "BUSY"
+)
+
+// ValidateUserStatus validates the user's status field
+func ValidateUserStatus(value, _ interface{}) bool {
+	switch value := value.(type) {
+	case string:
+		switch value {
+		case Offline, OnlineAvailable, Busy:
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("the accessibility field must be a string")
+	}
+}
+
 // User represents a user, implements the User interface{}
 type User struct {
 	Username string `bson:"username" json:"username" valid:"required,alphanum,length(1|30)"`
@@ -47,7 +71,7 @@ type Data struct {
 // CreateGoal creates a new goal
 func (c *User) CreateGoal(goalCol *mgo.Collection, g *goal.Goal) (utils.HexID, error) {
 	id := utils.HexID{ObjectId: bson.NewObjectId()}
-	g.SetID(c.Username, id)
+	g.Username, g.HexID = c.Username, id
 	err := goalCol.Insert(g)
 	if err != nil {
 		// Does not catch duplication error
@@ -60,7 +84,7 @@ func (c *User) CreateGoal(goalCol *mgo.Collection, g *goal.Goal) (utils.HexID, e
 func (c *User) DeleteGoal(goalCol *mgo.Collection, id utils.HexID) error {
 	err := goalCol.Remove(bson.M{
 		"username": c.Username,
-		"_id":      id,
+		"_id":      id.ObjectId,
 	})
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -73,7 +97,7 @@ func (c *User) DeleteGoal(goalCol *mgo.Collection, id utils.HexID) error {
 
 // UpdateGoal updates a goal
 func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id utils.HexID) error {
-	g.SetID(c.Username, id)
+	g.Username, g.HexID = c.Username, id
 	err := goalCol.Update(bson.M{
 		"username": c.Username,
 		"_id":      id,
@@ -88,11 +112,18 @@ func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id utils.HexID)
 }
 
 // RetriveGoals retrieves all the goals
-func (c *User) RetriveGoals(goalCol *mgo.Collection) ([]goal.Goal, error) {
+func (c *User) RetriveGoals(goalCol *mgo.Collection, limit, offset int) ([]goal.Goal, error) {
 	var gs []goal.Goal
-	err := goalCol.Find(bson.M{
+	q := goalCol.Find(bson.M{
 		"username": c.Username,
-	}).All(&gs)
+	})
+	if limit > 0 {
+		q.Limit(limit)
+	}
+	if offset > 0 {
+		q.Skip(offset)
+	}
+	err := q.All(&gs)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +196,7 @@ func Delete(userC *mgo.Collection, username, password string) error {
 			return err
 		}
 	}
-	return errors.NewValidate("invalid password")
+	return errors.ErrAuthentication
 
 }
 
@@ -217,29 +248,5 @@ func ChangePassword(userC *mgo.Collection, username, old, password string) error
 		}
 		return nil
 	}
-	return errors.NewValidate("invalid password")
-}
-
-const (
-	// Offline represents user offline status
-	Offline = "OFFLINE"
-	// OnlineAvailable represents user online status
-	OnlineAvailable = "ONLINE"
-	// Busy represents user busy status
-	Busy = "BUSY"
-)
-
-// ValidateUserStatus validates the user's status field
-func ValidateUserStatus(value, _ interface{}) bool {
-	switch value := value.(type) {
-	case string:
-		switch value {
-		case Offline, OnlineAvailable, Busy:
-			return true
-		default:
-			return false
-		}
-	default:
-		panic("the accessibility field must be a string")
-	}
+	return errors.ErrAuthentication
 }

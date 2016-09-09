@@ -15,6 +15,8 @@
 package concreteachieving
 
 import (
+	"fmt"
+
 	"github.com/iocat/donit/internal/achieving"
 	"github.com/iocat/donit/internal/achieving/internal/goal"
 	"github.com/iocat/donit/internal/achieving/utils"
@@ -28,21 +30,37 @@ type Goal struct {
 }
 
 // AddAchievable adds a new achievable task
-func (cg *Goal) AddAchievable(achieving.Achievable) (utils.HexID, error) {
-	return utils.HexID{}, nil
+func (cg *Goal) AddAchievable(a achieving.Achievable) (utils.HexID, error) {
+	if a, ok := a.(*Achievable); ok {
+		return cg.Goal.AddAchievable(cg.achievableCollection, &(a.Achievable))
+	}
+	return utils.HexID{}, fmt.Errorf("wrong data type, expect Achievable, got %T", a)
 }
 
-// RemoveAchievableTask removes the task
-func (cg *Goal) RemoveAchievable(utils.HexID) error {
-	return nil
+// RemoveAchievable removes the task
+func (cg *Goal) RemoveAchievable(id utils.HexID) error {
+	return cg.RemoveAchievable(id)
 }
 
-// UpdateAchievableTask updates the task
-func (cg *Goal) UpdateAchievable(achieving.Achievable, utils.HexID) error {
-	return nil
+// UpdateAchievable updates the task
+func (cg *Goal) UpdateAchievable(a achieving.Achievable, id utils.HexID) error {
+	if a, ok := a.(*Achievable); ok {
+		return cg.Goal.UpdateAchievable(cg.achievableCollection, &(a.Achievable), id)
+	}
+	return fmt.Errorf("wrong data type, expect Achievable, got %T", a)
 }
 
-// RetrieveAchievableTask retrieves the task list
-func (cg *Goal) RetrieveAchievable() ([]achieving.Achievable, error) {
-	return nil, nil
+// RetrieveAchievable retrieves the task list
+func (cg *Goal) RetrieveAchievable(limit, offset int) ([]achieving.Achievable, error) {
+	as, err := cg.Goal.RetrieveAchievable(cg.achievableCollection, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	var res []achieving.Achievable
+	for _, a := range as {
+		res = append(res, &Achievable{
+			Achievable: a,
+		})
+	}
+	return res, nil
 }

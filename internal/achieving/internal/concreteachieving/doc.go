@@ -12,21 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package concreteachieving contains concrete implementation of interfaces
+// in the achieving package
+// concreteachievable encapsulates the creation of the private concrete
+// implemenation, so that the jsoninterpreter can creates object. (All creation
+// of object should be via the jsoninterpreter)
 package concreteachieving
-
-import "github.com/iocat/donit/internal/achieving/internal/achievable"
-
-// Achievable rerpesents a concreate achieving.Achievable
-type Achievable struct {
-	achievable.Achievable
-}
-
-// HasAchieved implements achieving.Achievable's HadAchieved
-func (a *Achievable) HasAchieved() bool {
-	return a.Achievable.HasAchieved()
-}
-
-// IsRepetitive returns whether this is a repetitive task or not
-func (a *Achievable) IsRepetitive() bool {
-	return a.Achievable.IsHabit()
-}
