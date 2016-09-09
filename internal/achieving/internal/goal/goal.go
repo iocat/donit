@@ -18,7 +18,8 @@ package goal
 import (
 	"github.com/iocat/donit/internal/achieving/internal/achievable"
 	"github.com/iocat/donit/internal/achieving/utils"
-	valid "gopkg.in/asaskevich/govalidator.v4"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -30,12 +31,6 @@ const (
 	AccessPublic = "PUBLIC"
 )
 
-func init() {
-	valid.SetFieldsRequiredByDefault(true)
-	valid.CustomTypeTagMap.Set("goalAccessValidator", valid.CustomTypeValidator(GoalAccessValidatorFunc))
-	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
-}
-
 // Goal represents an achievable Goal
 type Goal struct {
 	utils.HexID           `bson:"id,inline" valid:"required"`
@@ -46,14 +41,8 @@ type Goal struct {
 	ToDo                  []achievable.Achievable `bson:"-" json:"todo" valid:"-"`
 }
 
-// SetID sets the user's id
-func (g *Goal) SetID(username string, id utils.HexID) {
-	g.Username = username
-	g.HexID = id
-}
-
-// GoalAccessValidatorFunc validates the accessibility field of the Goal model
-func GoalAccessValidatorFunc(value, _ interface{}) bool {
+// AccessValidatorFunc validates the accessibility field of the Goal model
+func AccessValidatorFunc(value, _ interface{}) bool {
 	switch value := value.(type) {
 	case string:
 		switch value {
@@ -67,6 +56,20 @@ func GoalAccessValidatorFunc(value, _ interface{}) bool {
 	}
 }
 
-func (g *Goal) ToDoTasks() []achievable.Achievable {
-	return g.ToDo
+// RetrieveHabit gets the habit list
+func (g *Goal) retrieve(list interface{}, a *mgo.Collection, limit, offset int) error {
+	q := a.Find(bson.M{
+		"goal": g.HexID,
+	})
+	if limit > 0 {
+		q.Limit(limit)
+	}
+	if offset > 0 {
+		q.Skip(offset)
+	}
+	err := q.All(list)
+	if err != nil {
+		return err
+	}
+	return nil
 }
