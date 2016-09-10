@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package validator contains code that validate object from the achieving
+// Package validator contains code that validate JSON object from the achieving
 // package. Validator only validates POST+PUT request with a JSON body.
 // User of validator MUST set up the validator properly to
 // validate a correct struct.
@@ -22,31 +22,57 @@
 package validator
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
+	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/achievable"
 	"github.com/iocat/donit/internal/achieving/internal/goal"
 	"github.com/iocat/donit/internal/achieving/internal/user"
+	json "github.com/iocat/donit/internal/achieving/jsoninterpreter"
 	valid "gopkg.in/asaskevich/govalidator.v4"
 )
 
 func init() {
-	valid.SetFieldsRequiredByDefault(true)
-	valid.CustomTypeTagMap.Set("goalAccessField", valid.CustomTypeValidator(goal.AccessValidatorFunc))
-	valid.CustomTypeTagMap.Set("validateUserStatus", valid.CustomTypeValidator(user.ValidateUserStatus))
-	valid.CustomTypeTagMap.Set("validateStatus", valid.CustomTypeValidator(achievable.ValidateStatus))
-	valid.CustomTypeTagMap.Set("cycle", valid.CustomTypeValidator(achievable.ValidateCycle))
-	valid.CustomTypeTagMap.Set("daysInWeekOrMonth", valid.CustomTypeValidator(achievable.ValidateDaysInWeekOrMonth))
+	valid.CustomTypeTagMap.Set("goalAccessField",
+		valid.CustomTypeValidator(goal.AccessValidatorFunc))
+	valid.CustomTypeTagMap.Set("validateUserStatus",
+		valid.CustomTypeValidator(user.ValidateUserStatus))
+	valid.CustomTypeTagMap.Set("validateStatus",
+		valid.CustomTypeValidator(achievable.ValidateStatus))
+	valid.CustomTypeTagMap.Set("cycle",
+		valid.CustomTypeValidator(achievable.ValidateCycle))
+	valid.CustomTypeTagMap.Set("daysInWeekOrMonth",
+		valid.CustomTypeValidator(achievable.ValidateDaysInWeekOrMonth))
 }
 
-// User validates the request body corresponding to an entity, if it is a valid entity
+// Validator validates the request body corresponding to an entity, if it is a valid entity
 // the method pass it to the http context as a "resource" object.
 // ( Caller can use GetValidatedResource helper function to get the "resource"
 // value from the request )
-func User(handler func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func Validator(handler func(w http.ResponseWriter, r *http.Request), interpreter json.Interpreter) http.HandlerFunc {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-
+			switch r.Method {
+			case "POST", "PUT":
+				var (
+					obj interface{}
+					err error
+				)
+				if obj, err = interpreter.Decode(r.Body); err != nil {
+					invalidRequest(err, w)
+					return
+				}
+				// Validate here
+				err = validate(obj)
+				if err != nil {
+					invalidRequest(errors.NewValidate(err.Error()), w)
+					return
+				}
+				r.WithContext(context.WithValue(context.Background(), "resource", obj))
+			}
+			handler(w, r)
 		})
 }
 
@@ -60,4 +86,27 @@ func RegisterInvalidRequestResponse(fn func(error, http.ResponseWriter)) {
 // GetValidatedResource gets the resource corresponding to the request.
 func GetValidatedResource(r *http.Request) interface{} {
 	return r.Context().Value("resource")
+}
+
+// Validate dispatches the validator on the object. Returns any error reported from the validator
+func validate(obj interface{}) error {
+	if ok, err := valid.ValidateStruct(obj); !ok {
+		var got error
+	loop:
+		for {
+			switch e := err.(type) {
+			case valid.Error:
+				got = e
+				break loop
+			case valid.Errors:
+				err = e.Errors()[0]
+			default:
+				panic(fmt.Errorf("unexpected type %T", e))
+			}
+		}
+		return got
+	} else if err != nil {
+		return fmt.Errorf("validate %T error: %s", obj, err)
+	}
+	return nil
 }

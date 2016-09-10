@@ -37,7 +37,7 @@ type Goal interface {
 }
 
 // User represents am user object, which should be containing the user data
-// User is also a Goal container that has goals CRUD code
+// User is also a Goal container that has goals' CRUD operations
 type User interface {
 	// Create goal creates a new goal
 	CreateGoal(Goal) (utils.HexID, error)
@@ -50,9 +50,10 @@ type User interface {
 }
 
 // UserStore represents a storage of user, it does not contain the user data
+// UserStore allows operations on UserStore
 type UserStore interface {
 	// RetriveUser retrives the user and expand the user data as needed
-	RetrieveUser(string, bool) (User, error)
+	RetrieveUser(string) (User, error)
 	// CreateNewUser creates a new user using the provided username and password
 	CreateNewUser(User, string) error
 	// DeleteUser deletes a user using the provided username and password

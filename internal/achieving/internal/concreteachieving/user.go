@@ -26,10 +26,10 @@ import (
 )
 
 // NewUser creates a new empty User
-func NewUser(goalCollection *mgo.Collection, achievableCollection *mgo.Collection) achieving.User {
+func NewUser(goal, task *mgo.Collection) *User {
 	return &User{
-		goalCollection:       goalCollection,
-		achievableCollection: achievableCollection,
+		goalCollection:       goal,
+		achievableCollection: task,
 	}
 }
 
@@ -46,9 +46,9 @@ func NewUserFromJSON(d *json.Decoder, goalCollection *mgo.Collection, achievable
 
 // User represents the concrete user
 type User struct {
-	user.User
-	achievableCollection *mgo.Collection
-	goalCollection       *mgo.Collection
+	user.User            `valid:"required"`
+	achievableCollection *mgo.Collection `valid:"-"`
+	goalCollection       *mgo.Collection `valid:"-"`
 }
 
 // CreateGoal creates a new goal

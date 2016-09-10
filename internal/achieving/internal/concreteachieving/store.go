@@ -15,6 +15,8 @@
 package concreteachieving
 
 import (
+	"fmt"
+
 	"github.com/iocat/donit/internal/achieving"
 	"github.com/iocat/donit/internal/achieving/internal/user"
 	"gopkg.in/mgo.v2"
@@ -22,45 +24,58 @@ import (
 
 // Store implements the achieving.UserStore
 type Store struct {
-	userCollection       *mgo.Collection
-	goalCollection       *mgo.Collection
-	achievableCollection *mgo.Collection
+	userCollection       *mgo.Collection `valid:"-"`
+	goalCollection       *mgo.Collection `valid:"-"`
+	achievableCollection *mgo.Collection `valid:"-"`
+}
+
+// NewStore creates a new UserStore
+func NewStore(user, goal, task *mgo.Collection) *Store {
+	return &Store{
+		userCollection:       user,
+		goalCollection:       goal,
+		achievableCollection: task,
+	}
 }
 
 // RetrieveUser implements userStore
-func (us Store) RetrieveUser(username string, expand bool) (achieving.User, error) {
+func (s Store) RetrieveUser(username string) (achieving.User, error) {
 	u := user.User{}
-	err := u.Retrieve(us.userCollection, username)
+	err := u.Retrieve(s.userCollection, username)
 	if err != nil {
 		return nil, err
 	}
 	cu := User{
 		User:                 u,
-		goalCollection:       us.goalCollection,
-		achievableCollection: us.achievableCollection,
+		goalCollection:       s.goalCollection,
+		achievableCollection: s.achievableCollection,
 	}
 	return &cu, nil
 }
 
 // CreateNewUser creates a new user using the provided username and password
-func (us Store) CreateNewUser(user achieving.User, password string) error {
-
-	return nil
+func (s Store) CreateNewUser(u achieving.User, password string) error {
+	if u, ok := u.(*User); !ok {
+		err := user.Create(&(u.User), s.userCollection, password)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("wrong data type, expect *concreteachieving.User, got %T", u)
 }
 
 // DeleteUser deletes a user using the provided username and password
-func (us Store) DeleteUser(username, password string) error {
-
-	return nil
+func (s Store) DeleteUser(username, password string) error {
+	return user.Delete(s.userCollection, username, password)
 }
 
 // Authenticate authenticates the username and password
-func (us Store) Authenticate(username, password string) (bool, error) {
-
-	return false, nil
+func (s Store) Authenticate(username, password string) (bool, error) {
+	return user.Authenticate(s.userCollection, username, password)
 }
 
 // ChangePassword changes a user password
-func (us Store) ChangePassword(username, password string) error {
-	return nil
+func (s Store) ChangePassword(username, oldpass, password string) error {
+	return user.ChangePassword(s.userCollection, username, oldpass, password)
 }

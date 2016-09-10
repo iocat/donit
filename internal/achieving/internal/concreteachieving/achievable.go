@@ -18,7 +18,7 @@ import "github.com/iocat/donit/internal/achieving/internal/achievable"
 
 // Achievable rerpesents a concreate achieving.Achievable
 type Achievable struct {
-	achievable.Achievable
+	achievable.Achievable `valid:"required"`
 }
 
 // HasAchieved implements achieving.Achievable's HadAchieved

@@ -25,8 +25,15 @@ import (
 
 // Goal implements the achieving.Goal interface
 type Goal struct {
-	goal.Goal
-	achievableCollection *mgo.Collection
+	goal.Goal            `valid:"required"`
+	achievableCollection *mgo.Collection `valid:"-"`
+}
+
+// NewGoal creates a new goal
+func NewGoal(taskCol *mgo.Collection) *Goal {
+	return &Goal{
+		achievableCollection: taskCol,
+	}
 }
 
 // AddAchievable adds a new achievable task
