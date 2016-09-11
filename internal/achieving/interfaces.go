@@ -20,6 +20,9 @@ import "github.com/iocat/donit/internal/achieving/utils"
 type Achievable interface {
 	HasAchieved() bool
 	IsRepetitive() bool
+
+	SetGoal(utils.HexID)
+	SetID(utils.HexID)
 }
 
 // Goal represents a goal that has the goal data
@@ -34,6 +37,9 @@ type Goal interface {
 
 	// RetriveAchievableTask gets a list of achievable task
 	RetrieveAchievable(limit, offset int) ([]Achievable, error)
+
+	SetOwner(string)
+	SetID(utils.HexID)
 }
 
 // User represents am user object, which should be containing the user data
@@ -45,8 +51,13 @@ type User interface {
 	DeleteGoal(utils.HexID) error
 	// UpdateGoal updates a goal
 	UpdateGoal(Goal, utils.HexID) error
+	// RetrieveGoal retrieves a goal
+	RetrieveGoal(utils.HexID) (Goal, error)
+
 	// RetrieveGoals get all the goal from this user
 	RetrieveGoals(limit, offset int) ([]Goal, error)
+
+	SetUsername(username string)
 }
 
 // UserStore represents a storage of user, it does not contain the user data
@@ -58,6 +69,8 @@ type UserStore interface {
 	CreateNewUser(User, string) error
 	// DeleteUser deletes a user using the provided username and password
 	DeleteUser(string, string) error
+	// UpdateUser updates the user information
+	UpdateUser(User, string) error
 
 	// Authenticate authenticates the username and password
 	Authenticate(string, string) (bool, error)
