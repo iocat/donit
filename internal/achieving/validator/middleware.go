@@ -13,18 +13,12 @@
 // limitations under the License.
 
 // Package validator contains code that validate JSON object from the achieving
-// package. Validator only validates POST+PUT request with a JSON body.
-// User of validator MUST set up the validator properly to
-// validate a correct struct.
-//
-// Validator will NOT propagate the result if the validation process returns an error
-// Caller can register a callback function to show a proper response (RegisterInvalidRequestResponse)
+// package.
 package validator
 
 import (
-	"context"
 	"fmt"
-	"net/http"
+	"io"
 
 	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/achievable"
@@ -47,45 +41,23 @@ func init() {
 		valid.CustomTypeValidator(achievable.ValidateDaysInWeekOrMonth))
 }
 
-// Validator validates the request body corresponding to an entity, if it is a valid entity
-// the method pass it to the http context as a "resource" object.
-// ( Caller can use GetValidatedResource helper function to get the "resource"
-// value from the request )
-func Validator(handler func(w http.ResponseWriter, r *http.Request), interpreter json.Interpreter) http.HandlerFunc {
-	return http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "POST", "PUT":
-				var (
-					obj interface{}
-					err error
-				)
-				if obj, err = interpreter.Decode(r.Body); err != nil {
-					invalidRequest(err, w)
-					return
-				}
-				// Validate here
-				err = validate(obj)
-				if err != nil {
-					invalidRequest(errors.NewValidate(err.Error()), w)
-					return
-				}
-				r.WithContext(context.WithValue(context.Background(), "resource", obj))
-			}
-			handler(w, r)
-		})
-}
-
-var invalidRequest func(error, http.ResponseWriter)
-
-// RegisterInvalidRequestResponse registers a callback function to handle invalid result
-func RegisterInvalidRequestResponse(fn func(error, http.ResponseWriter)) {
-	invalidRequest = fn
-}
-
-// GetValidatedResource gets the resource corresponding to the request.
-func GetValidatedResource(r *http.Request) interface{} {
-	return r.Context().Value("resource")
+// Validate decodes the json body and returns an object corresponding to the json
+// interpreter
+func Validate(r io.Reader, interpreter json.Interpreter) (interface{}, error) {
+	// Decode the body
+	var (
+		obj interface{}
+		err error
+	)
+	if obj, err = interpreter.Decode(r); err != nil {
+		return nil, err
+	}
+	// Run the validator
+	err = validate(obj)
+	if err != nil {
+		return nil, errors.NewValidate(err.Error())
+	}
+	return obj, nil
 }
 
 // Validate dispatches the validator on the object. Returns any error reported from the validator
