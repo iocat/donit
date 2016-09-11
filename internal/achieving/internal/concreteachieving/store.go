@@ -79,3 +79,15 @@ func (s Store) Authenticate(username, password string) (bool, error) {
 func (s Store) ChangePassword(username, oldpass, password string) error {
 	return user.ChangePassword(s.userCollection, username, oldpass, password)
 }
+
+// UpdateUser updates a user data
+func (s Store) UpdateUser(u achieving.User, username string) error {
+	if u, ok := u.(*User); !ok {
+		err := user.Update(&(u.User), s.userCollection, username)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("wrong data type, expect *concreteachieving.User, got %T", u)
+}

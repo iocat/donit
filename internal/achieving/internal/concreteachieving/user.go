@@ -15,10 +15,8 @@
 package concreteachieving
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/go-errors/errors"
 	"github.com/iocat/donit/internal/achieving"
 	"github.com/iocat/donit/internal/achieving/internal/user"
 	"github.com/iocat/donit/internal/achieving/utils"
@@ -31,17 +29,6 @@ func NewUser(goal, task *mgo.Collection) *User {
 		goalCollection:       goal,
 		achievableCollection: task,
 	}
-}
-
-// NewUserFromJSON possibly returns a json decoding error
-func NewUserFromJSON(d *json.Decoder, goalCollection *mgo.Collection, achievableCollection *mgo.Collection) (achieving.User, error) {
-	var u User
-	err := d.Decode(&(u.User))
-	if err != nil {
-		return nil, errors.Errorf("invalid json")
-	}
-	u.goalCollection, u.achievableCollection = goalCollection, achievableCollection
-	return u, nil
 }
 
 // User represents the concrete user
@@ -72,6 +59,18 @@ func (c User) UpdateGoal(g achieving.Goal, id utils.HexID) error {
 	return fmt.Errorf("invalid data type, expect Goal, got %T", g)
 }
 
+// RetrieveGoal retrieves the goal
+func (c User) RetrieveGoal(id utils.HexID) (achieving.Goal, error) {
+	g, err := c.User.RetrieveGoal(c.goalCollection, id)
+	if err != nil {
+		return nil, err
+	}
+	return &Goal{
+		Goal:                 g,
+		achievableCollection: c.achievableCollection,
+	}, nil
+}
+
 // RetrieveGoals retrieves a goal
 func (c User) RetrieveGoals(limit, offset int) ([]achieving.Goal, error) {
 	gs, err := c.User.RetriveGoals(c.goalCollection, limit, offset)
@@ -86,4 +85,9 @@ func (c User) RetrieveGoals(limit, offset int) ([]achieving.Goal, error) {
 		})
 	}
 	return goals, nil
+}
+
+// SetUsername sets the username
+func (c *User) SetUsername(username string) {
+	c.Username = username
 }

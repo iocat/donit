@@ -71,3 +71,13 @@ func (cg *Goal) RetrieveAchievable(limit, offset int) ([]achieving.Achievable, e
 	}
 	return res, nil
 }
+
+// SetKey set the username and id
+func (cg *Goal) SetOwner(username string) {
+	cg.Goal.Username = username
+
+}
+
+func (cg *Goal) SetID(id utils.HexID) {
+	cg.Goal.HexID = id
+}

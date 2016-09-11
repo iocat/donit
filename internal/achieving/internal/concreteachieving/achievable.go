@@ -14,7 +14,10 @@
 
 package concreteachieving
 
-import "github.com/iocat/donit/internal/achieving/internal/achievable"
+import (
+	"github.com/iocat/donit/internal/achieving/internal/achievable"
+	"github.com/iocat/donit/internal/achieving/utils"
+)
 
 // Achievable rerpesents a concreate achieving.Achievable
 type Achievable struct {
@@ -29,4 +32,14 @@ func (a *Achievable) HasAchieved() bool {
 // IsRepetitive returns whether this is a repetitive task or not
 func (a *Achievable) IsRepetitive() bool {
 	return a.Achievable.IsHabit()
+}
+
+// SetGoal sets the goal
+func (a *Achievable) SetGoal(goalid utils.HexID) {
+	a.Goal = goalid
+}
+
+// SetID sets the id
+func (a *Achievable) SetID(achid utils.HexID) {
+	a.HexID = achid
 }

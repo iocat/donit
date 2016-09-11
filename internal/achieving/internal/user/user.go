@@ -111,6 +111,19 @@ func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id utils.HexID)
 	return nil
 }
 
+// RetrieveGoal gets the goal
+func (c *User) RetrieveGoal(goalCol *mgo.Collection, id utils.HexID) (goal.Goal, error) {
+	var g goal.Goal
+	err := goalCol.FindId(id.ObjectId).One(&g)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id))
+		}
+		return nil, err
+	}
+	return g, nil
+}
+
 // RetriveGoals retrieves all the goals
 func (c *User) RetriveGoals(goalCol *mgo.Collection, limit, offset int) ([]goal.Goal, error) {
 	var gs []goal.Goal
@@ -173,6 +186,22 @@ func Create(c *User, userC *mgo.Collection, password string) error {
 	if err != nil {
 		if mgo.IsDup(err) {
 			return errors.NewDuplicated("user", c.Username)
+		}
+		return err
+	}
+	return nil
+}
+
+// Update updates a user data
+func Update(u *User, userC *mgo.Collection, username string) error {
+	err := userC.Update(bson.M{
+		"username": username,
+	}, bson.M{
+		"$set": u,
+	})
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return errors.NewNotFound("user", username)
 		}
 		return err
 	}
