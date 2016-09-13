@@ -117,9 +117,9 @@ func (c *User) RetrieveGoal(goalCol *mgo.Collection, id utils.HexID) (goal.Goal,
 	err := goalCol.FindId(id.ObjectId).One(&g)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id))
+			return goal.Goal{}, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id))
 		}
-		return nil, err
+		return goal.Goal{}, err
 	}
 	return g, nil
 }
@@ -194,6 +194,7 @@ func Create(c *User, userC *mgo.Collection, password string) error {
 
 // Update updates a user data
 func Update(u *User, userC *mgo.Collection, username string) error {
+	u.Username = username
 	err := userC.Update(bson.M{
 		"username": username,
 	}, bson.M{

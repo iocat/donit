@@ -93,6 +93,7 @@ func (g *Goal) RemoveAchievable(ac *mgo.Collection, id utils.HexID) error {
 
 // UpdateAchievable updates an achievable task
 func (g *Goal) UpdateAchievable(ac *mgo.Collection, a *achievable.Achievable, id utils.HexID) error {
+	a.Goal, a.HexID = g.HexID, id
 	err := ac.Update(bson.M{
 		"goal": g.HexID,
 		"_id":  id,
@@ -105,8 +106,8 @@ func (g *Goal) UpdateAchievable(ac *mgo.Collection, a *achievable.Achievable, id
 	return nil
 }
 
-// RetrieveAchievable gets the habit list
-func (g *Goal) RetrieveAchievable(ac *mgo.Collection, limit, offset int) ([]achievable.Achievable, error) {
+// RetrieveAchievables gets the habit list
+func (g *Goal) RetrieveAchievables(ac *mgo.Collection, limit, offset int) ([]achievable.Achievable, error) {
 	var h []achievable.Achievable
 	err := g.retrieve(&h, ac, limit, offset)
 	if err != nil {
