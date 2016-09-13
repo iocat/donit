@@ -14,15 +14,21 @@
 
 package achieving
 
-import "github.com/iocat/donit/internal/achieving/utils"
+import (
+	"fmt"
+
+	"github.com/iocat/donit/internal/achieving/errors"
+	"github.com/iocat/donit/internal/achieving/utils"
+	"gopkg.in/mgo.v2/bson"
+)
 
 // Achievable represents an achieveable task
 type Achievable interface {
 	HasAchieved() bool
 	IsRepetitive() bool
 
-	SetGoal(utils.HexID)
-	SetID(utils.HexID)
+	//SetGoal(utils.HexID)
+	//SetID(utils.HexID)
 }
 
 // Goal represents a goal that has the goal data
@@ -38,8 +44,8 @@ type Goal interface {
 	// RetriveAchievableTask gets a list of achievable task
 	RetrieveAchievable(limit, offset int) ([]Achievable, error)
 
-	SetOwner(string)
-	SetID(utils.HexID)
+	//SetOwner(string)
+	//SetID(utils.HexID)
 }
 
 // User represents am user object, which should be containing the user data
@@ -57,7 +63,7 @@ type User interface {
 	// RetrieveGoals get all the goal from this user
 	RetrieveGoals(limit, offset int) ([]Goal, error)
 
-	SetUsername(username string)
+	// SetUsername(username string)
 }
 
 // UserStore represents a storage of user, it does not contain the user data
@@ -76,4 +82,14 @@ type UserStore interface {
 	Authenticate(string, string) (bool, error)
 	// ChangePassword changes a user password
 	ChangePassword(string, string, string) error
+}
+
+// CreateID is a helper method to create a new hexadecimal id from string
+func CreateID(id string) (utils.HexID, error) {
+	if !bson.IsObjectIdHex(id) {
+		return utils.HexID{}, errors.NewValidate(fmt.Sprintf("%s is not a hexadecimal id", id))
+	}
+	return utils.HexID{
+		ObjectId: bson.ObjectIdHex(id),
+	}, nil
 }
