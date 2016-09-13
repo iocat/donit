@@ -13,6 +13,9 @@
 // limitations under the License.
 
 // Package jsoninterpreter handles JSON marshaling and json unmarshaling
+// Reason why we need a json interpreter:
+// 	+ 1. Allow the creation of unexported types in the internal package
+// 	+ 2. Enforce json input from the API user
 package jsoninterpreter
 
 import (
@@ -46,12 +49,15 @@ func newErrInvalidJSONType(err string) error {
 type Interpreter interface {
 	// Decode interprets and decodes the JSON data into the output object
 	Decode(io.Reader) (interface{}, error)
-
 	// Encode writes the object to the io.Writer output buffer
-	//
-	// If the object implements json.Marshaler, the marshalling output will be
-	// written instead
 	Encode(io.Writer, interface{}) error
+}
+
+// NewStore creates a new user store
+// TODO(iocat): move this function to another package
+// (not related to jsoninterpreter tho)
+func NewStore(user, goal, achievable *mgo.Collection) achieving.UserStore {
+	return concr.NewStore(user, goal, achievable)
 }
 
 // UserJSONInterpreter implements Interpreter
@@ -61,7 +67,7 @@ type UserJSONInterpreter struct {
 }
 
 // NewUser creates a user interpreter
-func NewUser(user, goal, achievable *mgo.Collection) Interpreter {
+func NewUser(goal, achievable *mgo.Collection) Interpreter {
 	return UserJSONInterpreter{
 		goal:       goal,
 		achievable: achievable,
