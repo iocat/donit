@@ -59,7 +59,7 @@ func (cg *Goal) UpdateAchievable(a achieving.Achievable, id utils.HexID) error {
 
 // RetrieveAchievable retrieves the task list
 func (cg *Goal) RetrieveAchievable(limit, offset int) ([]achieving.Achievable, error) {
-	as, err := cg.Goal.RetrieveAchievable(cg.achievableCollection, limit, offset)
+	as, err := cg.Goal.RetrieveAchievables(cg.achievableCollection, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +70,4 @@ func (cg *Goal) RetrieveAchievable(limit, offset int) ([]achieving.Achievable, e
 		})
 	}
 	return res, nil
-}
-
-// SetKey set the username and id
-func (cg *Goal) SetOwner(username string) {
-	cg.Goal.Username = username
-
-}
-
-func (cg *Goal) SetID(id utils.HexID) {
-	cg.Goal.HexID = id
 }

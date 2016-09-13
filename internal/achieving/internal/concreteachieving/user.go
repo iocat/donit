@@ -86,8 +86,3 @@ func (c User) RetrieveGoals(limit, offset int) ([]achieving.Goal, error) {
 	}
 	return goals, nil
 }
-
-// SetUsername sets the username
-func (c *User) SetUsername(username string) {
-	c.Username = username
-}
