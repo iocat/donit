@@ -26,9 +26,6 @@ import (
 type Achievable interface {
 	HasAchieved() bool
 	IsRepetitive() bool
-
-	//SetGoal(utils.HexID)
-	//SetID(utils.HexID)
 }
 
 // Goal represents a goal that has the goal data
@@ -42,10 +39,7 @@ type Goal interface {
 	UpdateAchievable(Achievable, utils.HexID) error
 
 	// RetriveAchievableTask gets a list of achievable task
-	RetrieveAchievable(limit, offset int) ([]Achievable, error)
-
-	//SetOwner(string)
-	//SetID(utils.HexID)
+	RetrieveAchievables(limit, offset int) ([]Achievable, error)
 }
 
 // User represents am user object, which should be containing the user data
@@ -62,8 +56,6 @@ type User interface {
 
 	// RetrieveGoals get all the goal from this user
 	RetrieveGoals(limit, offset int) ([]Goal, error)
-
-	// SetUsername(username string)
 }
 
 // UserStore represents a storage of user, it does not contain the user data

@@ -57,7 +57,7 @@ func (e *ExpandableUser) Retrieve() error {
 // Retrieve gets all the tasks associated with this goal and store them
 func (e *ExpandableGoal) Retrieve() error {
 	var err error
-	e.Tasks, err = e.RetrieveAchievable(0, 0)
+	e.Tasks, err = e.RetrieveAchievables(0, 0)
 	if err != nil {
 		return err
 	}

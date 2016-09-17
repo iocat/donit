@@ -57,8 +57,8 @@ func (cg *Goal) UpdateAchievable(a achieving.Achievable, id utils.HexID) error {
 	return fmt.Errorf("wrong data type, expect Achievable, got %T", a)
 }
 
-// RetrieveAchievable retrieves the task list
-func (cg *Goal) RetrieveAchievable(limit, offset int) ([]achieving.Achievable, error) {
+// RetrieveAchievables retrieves the task list
+func (cg *Goal) RetrieveAchievables(limit, offset int) ([]achieving.Achievable, error) {
 	as, err := cg.Goal.RetrieveAchievables(cg.achievableCollection, limit, offset)
 	if err != nil {
 		return nil, err
