@@ -20,7 +20,7 @@ func getPassword(r *http.Request) (string, error) {
 	return password, nil
 }
 
-func decorateUserHandler(getResourceKey bool, handler func(achieving.UserStore, string, w http.ResponseWriter, r *http.Request)) http.HandlerFunc{
+func decorateUserHandler(getResourceKey bool, handler func(achieving.UserStore, string, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	var keyGeneratorFunc func() []string
 	if getResourceKey {
 		keyGeneratorFunc = User.resourceKeyNames
@@ -28,17 +28,17 @@ func decorateUserHandler(getResourceKey bool, handler func(achieving.UserStore, 
 		keyGeneratorFunc = User.collectionKeyNames
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-		ids,err := utils.MuxGetParams(r, keyGeneratorFunc()...)
-		if err != nil{
-			utils.HandleError(err,w)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ids, err := utils.MuxGetParams(r, keyGeneratorFunc()...)
+		if err != nil {
+			utils.HandleError(err, w)
 			return
 		}
 		var username string
 		if getResourceKey {
 			username = ids[0]
 		}
-		handler(store, username, w,r)
+		handler(store, username, w, r)
 	})
 }
 

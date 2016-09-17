@@ -70,7 +70,7 @@ var UpdateAchievable = decorateAchievableHandler(true, updateAchievable)
 var DeleteAchievable = decorateAchievableHandler(true, deleteAchievable)
 
 // AllAchievables reads a list of achievable tasks
-var AllAchievables = decorateAchievableHandler(false, readAchievables)
+var AllAchievables = decorateAchievableHandler(false, allAchievables)
 
 func createAchievable(goal achieving.Goal, _ string, w http.ResponseWriter, r *http.Request) {
 	ach, err := validator.Validate(r.Body, Achievable.interpreter())
@@ -78,7 +78,7 @@ func createAchievable(goal achieving.Goal, _ string, w http.ResponseWriter, r *h
 		utils.HandleError(err, w)
 		return
 	}
-	achid, err := goal.AddAchievable(ach.(achieving.Achievable))
+	_, err = goal.AddAchievable(ach.(achieving.Achievable))
 	if err != nil {
 		utils.HandleError(err, w)
 		return

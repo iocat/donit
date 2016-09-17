@@ -56,7 +56,7 @@ func createGoal(user achieving.User, _ string, w http.ResponseWriter, r *http.Re
 		utils.HandleError(err, w)
 		return
 	}
-	id, err := user.CreateGoal(goal.(achieving.Goal))
+	_, err = user.CreateGoal(goal.(achieving.Goal))
 	if err != nil {
 		utils.HandleError(err, w)
 		return

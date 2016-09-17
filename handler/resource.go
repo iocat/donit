@@ -16,7 +16,6 @@ package handler
 
 import (
 	"context"
-	"net/http"
 	"path/filepath"
 
 	"gopkg.in/mgo.v2"
@@ -42,6 +41,10 @@ const (
 )
 
 // URL gets the URL of the endpoint (resource)
+func (e Endpoint) URL() string {
+	return e.url()
+}
+
 func (e Endpoint) url() string {
 	var endpointURL = []string{
 		User:       "/users/{user}/goals/{goal}",
@@ -52,8 +55,12 @@ func (e Endpoint) url() string {
 }
 
 // BaseURL gets the URL of the endpoint (collection)
+func (e Endpoint) BaseURL() string {
+	return e.baseURL()
+}
+
 func (e Endpoint) baseURL() string {
-	return filepath.Dir(e.url())
+	return filepath.Dir(e.URL())
 }
 
 func (e Endpoint) resourceKeyNames() []string {
@@ -70,29 +77,10 @@ func (e Endpoint) collectionKeyNames() []string {
 	return rkn[:len(rkn)-1]
 }
 
-// CollectionHandler ....
-func (e Endpoint) CollectionHandler() (string, http.HandlerFunc) {
-	var collectionHandlers = []http.HandlerFunc{
-		User:       UsersHandler,
-		Goal:       GoalsHandler,
-		Achievable: AchievablesHandler,
-	}
-	return e.baseURL(), collectionHandlers[e]
-}
-
+// TODO: not implemented
 func (e Endpoint) resourceLocationForID(id ...string) string {
-	// TODO : implement this
-	return ""
-}
 
-// ResourceHandler ....
-func (e Endpoint) ResourceHandler() (string, http.HandlerFunc) {
-	var resourceHandler = []http.HandlerFunc{
-		User:       UserHandler,
-		Goal:       GoalHandler,
-		Achievable: AchievableHandler,
-	}
-	return e.url(), resourceHandler[e]
+	return ""
 }
 
 var baseContext = context.Background()
