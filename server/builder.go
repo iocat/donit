@@ -1,3 +1,17 @@
+// Copyright 2016 Thanh Ngo <felix.infinite@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package server
 
 import (
@@ -25,21 +39,25 @@ func (sb *serverBuilder) build() (*Server, error) {
 // setupRouter sets up the router with a prefedefined path
 func (sb *serverBuilder) router() *serverBuilder {
 	sb.r = mux.NewRouter()
-	// Set up a subrouter for api that matches to "http[s]://api.domain.com/v#/"
+	// Set up a handler dispatcher
 	common := sb.r
 	common.NotFoundHandler = handler.NotFound
-	// Asign handlers
-	handlers, err := handler.New(sb.conf.DBURL, sb.conf.DBName)
-	if err != nil {
-		sb.err = err
-		return sb
-	}
-	for _, h := range handlers.Resources {
-		col, ite := h.URL()
-		common.HandleFunc(col, h.Collection())
-		common.HandleFunc(ite, h.Item())
-	}
-	common.HandleFunc("/users/{user}/validate", handlers.Validator)
+	common.HandleFunc(handler.User.BaseURL(), handler.CreateUser).Methods("POST")
+	common.HandleFunc(handler.User.URL(), handler.DeleteUser).Methods("DELETE")
+	common.HandleFunc(handler.User.URL(), handler.UpdateUser).Methods("PUT")
+	common.HandleFunc(handler.User.URL(), handler.ReadUser).Methods("GET")
+
+	common.HandleFunc(handler.Goal.BaseURL(), handler.CreateGoal).Methods("POST")
+	common.HandleFunc(handler.Goal.BaseURL(), handler.AllGoals).Methods("GET")
+	common.HandleFunc(handler.Goal.URL(), handler.DeleteGoal).Methods("DELETE")
+	common.HandleFunc(handler.Goal.URL(), handler.UpdateGoal).Methods("PUT")
+	common.HandleFunc(handler.Goal.URL(), handler.ReadGoal).Methods("GET")
+
+	common.HandleFunc(handler.Achievable.BaseURL(), handler.CreateAchievable).Methods("POST")
+	common.HandleFunc(handler.Achievable.BaseURL(), handler.AllAchievables).Methods("GET")
+	common.HandleFunc(handler.Achievable.URL(), handler.DeleteAchievable).Methods("DELETE")
+	common.HandleFunc(handler.Achievable.URL(), handler.UpdateAchievable).Methods("PUT")
+
 	return sb
 }
 
