@@ -18,15 +18,11 @@ import (
 	"context"
 	"net/http"
 	"path/filepath"
-	"time"
 
-	"github.com/iocat/donit/handler/internal/errors"
-	"github.com/iocat/donit/handler/internal/service"
-	"github.com/iocat/donit/handler/internal/utils"
-	"github.com/iocat/donit/internal/donitdoc/followers"
-	"github.com/iocat/donit/internal/donitdoc/users"
+	"gopkg.in/mgo.v2"
 
-	docs "github.com/iocat/donit/internal/docgroup"
+	"github.com/iocat/donit/internal/achieving"
+	json "github.com/iocat/donit/internal/achieving/jsoninterpreter"
 )
 
 func init() {
@@ -39,41 +35,20 @@ type Endpoint byte
 const (
 	// User represents the user endpoint
 	User Endpoint = iota
-	// Follower represents the follower endpoint
-	Follower
 	// Goal represents the goal endpoint
 	Goal
-	// Comment represents the comment endpoint
-	Comment
-	// Habit represents the habit endpoint
-	Habit
-	// Task represents the task endpoint
-	Task
+	// Achievable represents an achievable task endpoint
+	Achievable
 )
 
 // URL gets the URL of the endpoint (resource)
 func (e Endpoint) url() string {
 	var endpointURL = []string{
-		User:     "/users/{user}/goals/{goal}",
-		Follower: "/users/{user}/followers/{follower}",
-		Goal:     "/users/{user}/goals/{goal}",
-		Comment:  "/users/{user}/goals/{goal}/comments/{comment}",
-		Habit:    "/users/{user}/goals/{goal}/habits/{habit}",
-		Task:     "/users/{user}/goals/{goal}/tasks/{task}",
+		User:       "/users/{user}/goals/{goal}",
+		Goal:       "/users/{user}/goals/{goal}",
+		Achievable: "/users/{user}/achievable/{achievable}",
 	}
 	return endpointURL[e]
-}
-
-// CollectionHandler ....
-// TODO
-func (e Endpoint) CollectionHandler() (string, http.HandlerFunc) {
-	return e.baseURL(), UsersHandler
-}
-
-// ResourceHandler ....
-// TODO
-func (e Endpoint) ResourceHandler() (string, http.HandlerFunc) {
-	return e.url(), UserHandler
 }
 
 // BaseURL gets the URL of the endpoint (collection)
@@ -81,187 +56,77 @@ func (e Endpoint) baseURL() string {
 	return filepath.Dir(e.url())
 }
 
+func (e Endpoint) resourceKeyNames() []string {
+	var keyNames = [][]string{
+		User:       []string{"user"},
+		Goal:       []string{"user", "goal"},
+		Achievable: []string{"user", "achievable"},
+	}
+	return keyNames[e]
+}
+
+func (e Endpoint) collectionKeyNames() []string {
+	rkn := e.resourceKeyNames()
+	return rkn[:len(rkn)-1]
+}
+
+// CollectionHandler ....
+func (e Endpoint) CollectionHandler() (string, http.HandlerFunc) {
+	var collectionHandlers = []http.HandlerFunc{
+		User:       UsersHandler,
+		Goal:       GoalsHandler,
+		Achievable: AchievablesHandler,
+	}
+	return e.baseURL(), collectionHandlers[e]
+}
+
+func (e Endpoint) resourceLocationForID(id ...string) string {
+	// TODO : implement this
+	return ""
+}
+
+// ResourceHandler ....
+func (e Endpoint) ResourceHandler() (string, http.HandlerFunc) {
+	var resourceHandler = []http.HandlerFunc{
+		User:       UserHandler,
+		Goal:       GoalHandler,
+		Achievable: AchievableHandler,
+	}
+	return e.url(), resourceHandler[e]
+}
+
 var baseContext = context.Background()
 
-// UsersHandler handles the operations on the user collection
-func UsersHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := utils.NewContextWithLog()
-	switch r.Method {
-	case "POST":
-		var user docs.User
-		if err := utils.DecodeJSON(r.Body, &user); err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		var getPassword = func(r *http.Request) (string, error) {
-			if err := r.ParseForm(); err != nil {
-				return "", errors.ErrBadData
-			}
-			password := r.Form.Get("password")
-			if len(password) == 0 {
-				return "", errors.NewBadData("password not provided")
-			}
-			return password, nil
-		}
-		password, err := getPassword(r)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		err = service.User.Create(ctx, user.User, password)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
-	default:
-		utils.HandleError(errors.ErrMethodNotAllowed, w)
-		return
-	}
+func getResourceFromContext(ctx context.Context) interface{} {
+	return ctx.Value("resource")
 }
 
-// UserHandler handles the operations on the user collection
-func UserHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := utils.NewContextWithLog()
-	switch r.Method {
-	case "GET":
-		var user = docs.User{
-			User: &users.User{},
-		}
-		// Check whether to expand the result
-		toExpand, err := utils.ToExpand(r)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		// Get the id
-		ids, err := utils.MuxGetParams(r, "user")
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		username := ids[0]
-		user.Username = username
-		// Get the user
-		if toExpand {
-			err := user.Read(ctx)
-			if err != nil {
-				utils.HandleError(err, w)
-				return
-			}
-		} else {
-			user.User, err = service.User.Read(ctx, username)
-			if err != nil {
-				utils.HandleError(err, w)
-				return
-			}
-		}
-		utils.WriteJSONtoHTTP(user, w, http.StatusOK)
-	case "PUT":
-		var user = users.User{}
-		if err := utils.DecodeJSON(r.Body, &user); err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		// Get the username
-		ids, err := utils.MuxGetParams(r, "user")
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		user.Username = ids[0]
-		// Update
-		if err := service.User.Update(ctx, &user); err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
-	case "DELETE":
-		// Get the username
-		ids, err := utils.MuxGetParams(r, "user")
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		err = service.User.Delete(ctx, ids[0])
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
-	default:
-		utils.HandleError(errors.ErrMethodNotAllowed, w)
-		return
-	}
+var store achieving.UserStore
+
+var collections = []*mgo.Collection{
+	User:       nil,
+	Goal:       nil,
+	Achievable: nil,
 }
 
-// FollowersHandler handlers the operations on the followers collection
-func FollowersHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := utils.NewContextWithLog()
-	// Get the username
-	ids, err := utils.MuxGetParams(r, "user")
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username := ids[0]
-	switch r.Method {
-	case "GET":
-		lim, off, err := utils.GetLimitAndOffset(r)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		fs, err := service.User.AllFollowers(ctx, username, lim, off)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(fs, w, http.StatusOK)
-	case "POST":
-		follower := followers.Follower{}
-		if err := utils.DecodeJSON(r.Body, follower); err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		follower.FollowAt, follower.Username = time.Now(), username
-		err := service.Follower.Follows(ctx, &follower)
-		if err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
-	default:
-		utils.HandleError(errors.ErrMethodNotAllowed, w)
-		return
-	}
+var interpreters = []json.Interpreter{
+	User:       nil,
+	Goal:       nil,
+	Achievable: nil,
 }
 
-// FollowerHandler handles the operations on the follower resource
-func FollowerHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := utils.NewContextWithLog()
-	// Get the username
-	ids, err := utils.MuxGetParams(r, "user", "follower")
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username, follower := ids[0], ids[1]
-	switch r.Method {
-	case "DELETE":
-		if err := service.Follower.Unfollows(ctx, username, follower); err != nil {
-			utils.HandleError(err, w)
-			return
-		}
-		utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
-	default:
-		utils.HandleError(errors.ErrMethodNotAllowed, w)
-		return
-	}
+func (e Endpoint) collection() *mgo.Collection {
+	return collections[e]
 }
 
-// TODO:
-// 		Write handlers for comments
-//		Write handlers for goals
-// 		Write handlers for habits
-// 		Write handlers for tasks
+func (e Endpoint) interpreter() json.Interpreter {
+	return interpreters[e]
+}
+
+var userInterpreter, goalInterpreter, achievableInterpreter json.Interpreter
+
+func init() {
+	// TODO set up db instance
+	// TODO set up collections and interpreters
+	store = json.NewStore(User.collection(), Goal.collection(), Achievable.collection())
+}

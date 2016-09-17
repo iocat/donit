@@ -9,18 +9,48 @@ import (
 	"github.com/iocat/donit/internal/achieving"
 )
 
-func CreateGoal(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, Goal.collectionKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
+func decorateGoalHandler(getResourceKey bool, handler func(achieving.User, string, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	var keyGeneratorFunc func() []string
+	if getResourceKey {
+		keyGeneratorFunc = Goal.resourceKeyNames
+	} else {
+		keyGeneratorFunc = Goal.collectionKeyNames
 	}
-	username := ids[0]
-	user, err := store.RetrieveUser(username)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
+	var getParentResource = func(username string) (achieving.User, error) {
+		user, err := store.RetrieveUser(username)
+		if err != nil {
+			return nil, err
+		}
+		return user, nil
 	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ids, err := utils.MuxGetParams(r, keyGeneratorFunc()...)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		username := ids[0]
+		user, err := getParentResource(username)
+		if err != nil {
+			utils.HandleError(err, w)
+			return
+		}
+		var gid string
+		if getResourceKey {
+			gid = ids[1]
+		}
+		handler(user, gid, w, r)
+	})
+}
+
+var CreateGoal = decorateGoalHandler(false, createGoal)
+var UpdateGoal = decorateGoalHandler(true, updateGoal)
+var DeleteGoal = decorateGoalHandler(true, deleteGoal)
+var ReadGoal = decorateGoalHandler(true, readGoal)
+var AllGoals = decorateGoalHandler(false, allGoals)
+
+func createGoal(user achieving.User, _ string, w http.ResponseWriter, r *http.Request) {
 	goal, err := validator.Validate(r.Body, Goal.interpreter())
 	if err != nil {
 		utils.HandleError(err, w)
@@ -35,18 +65,7 @@ func CreateGoal(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
 }
 
-func UpdateGoal(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, Goal.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username, goalid := ids[0], ids[1]
-	user, err := store.RetrieveUser(username)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
+func updateGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {
 	goal, err := validator.Validate(r.Body, Goal.interpreter())
 	if err != nil {
 		utils.HandleError(err, w)
@@ -66,19 +85,8 @@ func UpdateGoal(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
 }
 
-func DeleteGoal(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, Goal.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username, goalid := ids[0], ids[1]
+func deleteGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {
 	gid, err := achieving.CreateID(goalid)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	user, err := store.RetrieveUser(username)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
@@ -91,19 +99,8 @@ func DeleteGoal(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
 }
 
-func ReadGoal(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, Goal.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username, goalid := ids[0], ids[1]
+func readGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {
 	gid, err := achieving.CreateID(goalid)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	user, err := store.RetrieveUser(username)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
@@ -114,4 +111,20 @@ func ReadGoal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.WriteJSONtoHTTP(goal, w, http.StatusOK)
+}
+
+func allGoals(user achieving.User, _ string, w http.ResponseWriter, r *http.Request) {
+	l, o, err := utils.GetLimitAndOffset(r)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+
+	gs, err := user.RetrieveGoals(l, o)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+
+	utils.WriteJSONtoHTTP(gs, w, http.StatusOK)
 }

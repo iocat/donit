@@ -69,8 +69,8 @@ var UpdateAchievable = decorateAchievableHandler(true, updateAchievable)
 // DeleteAchievable deletes an achievable task
 var DeleteAchievable = decorateAchievableHandler(true, deleteAchievable)
 
-// ReadAchievables reads a list of achievable tasks
-var ReadAchievables = decorateAchievableHandler(false, readAchievables)
+// AllAchievables reads a list of achievable tasks
+var AllAchievables = decorateAchievableHandler(false, readAchievables)
 
 func createAchievable(goal achieving.Goal, _ string, w http.ResponseWriter, r *http.Request) {
 	ach, err := validator.Validate(r.Body, Achievable.interpreter())
@@ -119,6 +119,17 @@ func deleteAchievable(goal achieving.Goal, key string, w http.ResponseWriter, _ 
 	utils.WriteJSONtoHTTP(nil, w, http.StatusOK)
 }
 
-func readAchievables(goal achieving.Goal, _ string, w http.ResponseWriter, r *http.Request) {
-	// TODO: need retrival function from internal packages
+func allAchievables(goal achieving.Goal, _ string, w http.ResponseWriter, r *http.Request) {
+	l, o, err := utils.GetLimitAndOffset(r)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+
+	achs, err := goal.RetrieveAchievables(l, o)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	utils.WriteJSONtoHTTP(achs, w, http.StatusOK)
 }

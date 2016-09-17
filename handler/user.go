@@ -20,8 +20,35 @@ func getPassword(r *http.Request) (string, error) {
 	return password, nil
 }
 
-// CreateUser creates a new user
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+func decorateUserHandler(getResourceKey bool, handler func(achieving.UserStore, string, w http.ResponseWriter, r *http.Request)) http.HandlerFunc{
+	var keyGeneratorFunc func() []string
+	if getResourceKey {
+		keyGeneratorFunc = User.resourceKeyNames
+	} else {
+		keyGeneratorFunc = User.collectionKeyNames
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		ids,err := utils.MuxGetParams(r, keyGeneratorFunc()...)
+		if err != nil{
+			utils.HandleError(err,w)
+			return
+		}
+		var username string
+		if getResourceKey {
+			username = ids[0]
+		}
+		handler(store, username, w,r)
+	})
+}
+
+var CreateUser = decorateUserHandler(false, createUser)
+var ReadUser = decorateUserHandler(true, readUser)
+var DeleteUser = decorateUserHandler(true, deleteUser)
+var UpdateUser = decorateUserHandler(true, updateUser)
+
+// createUser creates a new user
+func createUser(store achieving.UserStore, _ string, w http.ResponseWriter, r *http.Request) {
 	obj, err := validator.Validate(r.Body, User.interpreter())
 	if err != nil {
 		utils.HandleError(err, w)
@@ -41,14 +68,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
 }
 
-// ReadUser reads the user data
-func ReadUser(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, User.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username := ids[0]
+// readUser reads the user data
+func readUser(store achieving.UserStore, username string, w http.ResponseWriter, r *http.Request) {
 	user, err := store.RetrieveUser(username)
 	if err != nil {
 		utils.HandleError(err, w)
@@ -58,13 +79,7 @@ func ReadUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteUser deletes an user
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, User.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username := ids[0]
+func deleteUser(store achieving.UserStore, username string, w http.ResponseWriter, r *http.Request) {
 	password, err := getPassword(r)
 	if err != nil {
 		utils.HandleError(err, w)
@@ -79,13 +94,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUser updates an user
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	ids, err := utils.MuxGetParams(r, User.resourceKeyNames()...)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	username := ids[0]
+func updateUser(store achieving.UserStore, username string, w http.ResponseWriter, r *http.Request) {
 	obj, err := validator.Validate(r.Body, User.interpreter())
 	if err != nil {
 		utils.HandleError(err, w)
