@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	docerr "github.com/iocat/donit/internal/donitdoc/errors"
+	docerr "github.com/iocat/donit/internal/achieving/errors"
 )
 
 const (
@@ -29,6 +29,7 @@ const (
 	codeResourceNotFound
 	codeResourceDuplicate
 	codeBadData
+	codeAuth
 )
 
 type code int
@@ -113,6 +114,8 @@ func ParseDocumentError(err error) error {
 		return newError(codeBadData, err)
 	case docerr.IsNotFound(err):
 		return newError(codeResourceNotFound, err)
+	case err == docerr.ErrAuthentication:
+		return newError(codeAuth, err)
 	default:
 		return err
 
