@@ -51,15 +51,21 @@ func WriteJSONtoHTTP(obj interface{}, w http.ResponseWriter, c int) {
 	_ = writeJSON(obj, w)
 }
 
+func WriteJSONtoHTTPWithLocation(loc string, obj interface{}, w http.ResponseWriter, c int) {
+	w.Header().Set("Location", loc)
+	WriteJSONtoHTTP(obj, w, c)
+}
+
 // HandleError is an utility function to handle the error
 func HandleError(err error, w http.ResponseWriter) {
 	err = errors.ParseDocumentError(err)
 	// handle local package's error
 	if err, ok := err.(errors.Error); ok {
+		// Temporarily write to stdout
+		fmt.Println(err)
 		WriteJSONtoHTTP(err, w, err.Code.HTTPStatus())
 		return
 	}
-	// TODO: log the error
 	WriteJSONtoHTTP(nil, w, http.StatusInternalServerError)
 }
 
@@ -102,7 +108,7 @@ func NewContextWithLog() context.Context {
 // MuxGetParams gets the request's parameter from the HTTP request's URL
 func MuxGetParams(r *http.Request, params ...string) ([]string, error) {
 	v := mux.Vars(r)
-	var res = make([]string, len(params))
+	var res = make([]string, 0, len(params))
 	for _, p := range params {
 		r, ok := v[p]
 		if !ok {
