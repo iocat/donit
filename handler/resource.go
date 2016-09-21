@@ -16,7 +16,9 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"gopkg.in/mgo.v2"
 
@@ -116,5 +118,20 @@ var userInterpreter, goalInterpreter, achievableInterpreter json.Interpreter
 func init() {
 	// TODO set up db instance
 	// TODO set up collections and interpreters
+	sess, err := mgo.DialWithTimeout("localhost:27017", 5*time.Second)
+	if err != nil {
+		panic(fmt.Errorf("set up database: %s", err))
+	}
+	db := sess.DB("donit")
+	collections = []*mgo.Collection{
+		User:       db.C("users"),
+		Goal:       db.C("goals"),
+		Achievable: db.C("achievables"),
+	}
+	interpreters = []json.Interpreter{
+		User:       json.NewUser(Goal.collection(), Achievable.collection()),
+		Goal:       json.NewGoal(Achievable.collection()),
+		Achievable: json.NewAchievable(),
+	}
 	store = json.NewStore(User.collection(), Goal.collection(), Achievable.collection())
 }
