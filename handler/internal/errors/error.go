@@ -37,6 +37,8 @@ type code int
 // HTTPStatus returns the http status code associated with the error
 func (c code) HTTPStatus() int {
 	switch c {
+	case codeAuth:
+		return http.StatusBadRequest
 	case codeInternal:
 		return http.StatusInternalServerError
 	case codeResourceNotFound:
