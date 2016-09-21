@@ -145,7 +145,7 @@ func (c *User) RetriveGoals(goalCol *mgo.Collection, limit, offset int) ([]goal.
 
 // StoredUser encapsulates user's password
 type storedUser struct {
-	User           `valid:"required"`
+	User           `bson:"user,inline" valid:"required"`
 	Authentication `bson:"authentication,inline" json:"-" valid:"required"`
 }
 
@@ -225,9 +225,9 @@ func Delete(userC *mgo.Collection, username, password string) error {
 			}
 			return err
 		}
+		return nil
 	}
 	return errors.ErrAuthentication
-
 }
 
 // Authenticate authenticates the user
