@@ -55,7 +55,7 @@ func (s Store) RetrieveUser(username string) (achieving.User, error) {
 
 // CreateNewUser creates a new user using the provided username and password
 func (s Store) CreateNewUser(u achieving.User, password string) error {
-	if u, ok := u.(*User); !ok {
+	if u, ok := u.(*User); ok {
 		err := user.Create(&(u.User), s.userCollection, password)
 		if err != nil {
 			return err
