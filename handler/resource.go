@@ -49,9 +49,9 @@ func (e Endpoint) URL() string {
 
 func (e Endpoint) url() string {
 	var endpointURL = []string{
-		User:       "/users/{user}/goals/{goal}",
+		User:       "/users/{user}",
 		Goal:       "/users/{user}/goals/{goal}",
-		Achievable: "/users/{user}/achievable/{achievable}",
+		Achievable: "/users/{user}/goals/{goal}/achievables/{achievable}",
 	}
 	return endpointURL[e]
 }
@@ -116,8 +116,6 @@ func (e Endpoint) interpreter() json.Interpreter {
 var userInterpreter, goalInterpreter, achievableInterpreter json.Interpreter
 
 func init() {
-	// TODO set up db instance
-	// TODO set up collections and interpreters
 	sess, err := mgo.DialWithTimeout("localhost:27017", 5*time.Second)
 	if err != nil {
 		panic(fmt.Errorf("set up database: %s", err))
