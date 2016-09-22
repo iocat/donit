@@ -16,6 +16,7 @@ package utils
 
 import "gopkg.in/mgo.v2/bson"
 
+// HexID represents a mongodb object id (12 byte object id)
 type HexID struct {
 	bson.ObjectId `bson:"_id,omitempty" json:"id" valid:"required,hexadecimal"`
 }

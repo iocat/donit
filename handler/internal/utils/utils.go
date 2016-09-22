@@ -51,6 +51,7 @@ func WriteJSONtoHTTP(obj interface{}, w http.ResponseWriter, c int) {
 	_ = writeJSON(obj, w)
 }
 
+// TODO: implement this
 func WriteJSONtoHTTPWithLocation(loc string, obj interface{}, w http.ResponseWriter, c int) {
 	w.Header().Set("Location", loc)
 	WriteJSONtoHTTP(obj, w, c)
