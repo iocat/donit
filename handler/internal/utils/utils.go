@@ -15,7 +15,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,8 +22,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/iocat/donit/handler/internal/errors"
-	"github.com/satori/go.uuid"
+	"github.com/iocat/donit/errors"
 )
 
 // WriteJSONtoHTTP writes the object to the HTTP response with the provided http code
@@ -62,7 +60,7 @@ func HandleError(err error, w http.ResponseWriter) {
 	err = errors.ParseDocumentError(err)
 	// handle local package's error
 	if err, ok := err.(errors.Error); ok {
-		// Temporarily write to stdout
+		// NOTE: Temporarily write to stdout
 		fmt.Println(err)
 		WriteJSONtoHTTP(err, w, err.Code.HTTPStatus())
 		return
@@ -101,11 +99,6 @@ func GetLimitAndOffset(r *http.Request) (int, int, error) {
 	return offs, lim, nil
 }
 
-// NewContextWithLog creates a new context decorated with logging UUID
-func NewContextWithLog() context.Context {
-	return context.WithValue(context.Background(), "log", uuid.NewV4().String())
-}
-
 // MuxGetParams gets the request's parameter from the HTTP request's URL
 func MuxGetParams(r *http.Request, params ...string) ([]string, error) {
 	v := mux.Vars(r)
@@ -118,15 +111,4 @@ func MuxGetParams(r *http.Request, params ...string) ([]string, error) {
 		res = append(res, r)
 	}
 	return res, nil
-}
-
-// ToExpand checks whether or not to expand the response body
-func ToExpand(r *http.Request) (bool, error) {
-	if err := r.ParseForm(); err != nil {
-		return false, errors.NewBadData(err)
-	}
-	if r.Form.Get("expand") == "true" {
-		return true, nil
-	}
-	return false, nil
 }

@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/iocat/donit/handler/internal/errors"
+	"github.com/iocat/donit/errors"
 	"github.com/iocat/donit/handler/internal/utils"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iocat/donit/handler/internal/errors"
+	"github.com/iocat/donit/errors"
 	"github.com/iocat/donit/handler/internal/utils"
 	"github.com/iocat/donit/internal/achieving"
 	"github.com/iocat/donit/internal/achieving/validator"

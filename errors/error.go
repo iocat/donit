@@ -55,17 +55,17 @@ func (c code) HTTPStatus() int {
 }
 
 var (
-	// ErrNotFound ...
+	// ErrNotFound represents a normal resource not found
 	ErrNotFound = newError(codeResourceNotFound, "resource not found")
-	// ErrMethodNotAllowed ...
+	// ErrMethodNotAllowed indicates the method is not allowed
 	ErrMethodNotAllowed = newError(codeMethodNotAllowed, "method not allowed")
-	// ErrInternal ...
+	// ErrInternal represents an internal error
 	ErrInternal = newError(codeInternal, "internal server error")
-	// ErrBadData ...
+	// ErrBadData represents an error that some JSON request values are invalid
 	ErrBadData = newError(codeBadData, "the provided data is invalid")
-	// ErrDecodeJSON ...
+	// ErrDecodeJSON represents an error where the JSON request body is invalid
 	ErrDecodeJSON = newError(codeDecodeJSON, "unable to decode the JSON message")
-	// ErrDuplicateResource ...
+	// ErrDuplicateResource represents a resource duplicated error
 	ErrDuplicateResource = newError(codeResourceDuplicate, "resource duplicated")
 )
 
@@ -88,6 +88,11 @@ func NewBadData(reason interface{}) error {
 // NewInternal creates a new internal error object
 func NewInternal(reason interface{}) error {
 	return newError(codeInternal, reason)
+}
+
+// NewAuthentication creates a new authenciation error
+func NewAuthentication(reason interface{}) error {
+	return newError(codeAuth, reason)
 }
 
 func newError(c code, reason interface{}) Error {
