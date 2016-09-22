@@ -42,21 +42,21 @@ func (sb *serverBuilder) router() *serverBuilder {
 	// Set up a handler dispatcher
 	common := sb.r
 	common.NotFoundHandler = handler.NotFound
-	common.HandleFunc(fmt.Sprintf("%s/auth", handler.User.URL()),
-		handler.Auth).Methods("GET")
-	common.HandleFunc(fmt.Sprintf("%s/changePass", handler.User.URL()),
-		handler.PasswordChange).Methods("PUT")
+	// Authentication
+	common.HandleFunc(fmt.Sprintf("%s/auth", handler.User.URL()), handler.Auth).Methods("GET")
+	common.HandleFunc(fmt.Sprintf("%s/auth", handler.User.URL()), handler.PasswordChange).Methods("PUT")
+	// User CRUD
 	common.HandleFunc(handler.User.BaseURL(), handler.CreateUser).Methods("POST")
 	common.HandleFunc(handler.User.URL(), handler.DeleteUser).Methods("DELETE")
 	common.HandleFunc(handler.User.URL(), handler.UpdateUser).Methods("PUT")
 	common.HandleFunc(handler.User.URL(), handler.ReadUser).Methods("GET")
-
+	// Goal CRUD
 	common.HandleFunc(handler.Goal.BaseURL(), handler.CreateGoal).Methods("POST")
 	common.HandleFunc(handler.Goal.BaseURL(), handler.AllGoals).Methods("GET")
 	common.HandleFunc(handler.Goal.URL(), handler.DeleteGoal).Methods("DELETE")
 	common.HandleFunc(handler.Goal.URL(), handler.UpdateGoal).Methods("PUT")
 	common.HandleFunc(handler.Goal.URL(), handler.ReadGoal).Methods("GET")
-
+	// Achievable CRUD
 	common.HandleFunc(handler.Achievable.BaseURL(), handler.CreateAchievable).Methods("POST")
 	common.HandleFunc(handler.Achievable.BaseURL(), handler.AllAchievables).Methods("GET")
 	common.HandleFunc(handler.Achievable.URL(), handler.DeleteAchievable).Methods("DELETE")
