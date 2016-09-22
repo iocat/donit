@@ -258,7 +258,7 @@ func ChangePassword(userC *mgo.Collection, username, old, password string) error
 		return err
 	}
 	if ok {
-		salt, pass, err := randomSaltEncryption(password)
+		pass, salt, err := randomSaltEncryption(password)
 		if err != nil {
 			return errors.NewValidate(err.Error())
 		}
