@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/iocat/donit/handler/internal/errors"
@@ -46,6 +47,53 @@ var CreateUser = decorateUserHandler(false, createUser)
 var ReadUser = decorateUserHandler(true, readUser)
 var DeleteUser = decorateUserHandler(true, deleteUser)
 var UpdateUser = decorateUserHandler(true, updateUser)
+var Auth = decorateUserHandler(true, authUser)
+var PasswordChange = decorateUserHandler(true, changePassword)
+
+func changePassword(store achieving.UserStore, username string, w http.ResponseWriter, r *http.Request) {
+	getChangePassword := func(param string, r *http.Request) (string, error) {
+		if err := r.ParseForm(); err != nil {
+			return "", errors.ErrBadData
+		}
+		password := r.Form.Get(param)
+		if len(password) == 0 {
+			return "", errors.NewBadData(fmt.Sprintf("password param %s not provided", param))
+		}
+		return password, nil
+	}
+	// get two passwords
+	oldpass, err := getChangePassword("old", r)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	newpass, err := getChangePassword("new", r)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	// Change the password
+	err = store.ChangePassword(username, oldpass, newpass)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
+}
+
+func authUser(store achieving.UserStore, username string, w http.ResponseWriter, r *http.Request) {
+	password, err := getPassword(r)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	ok, err := store.Authenticate(username, password)
+	if err != nil {
+		utils.HandleError(err, w)
+		return
+	}
+	utils.WriteJSONtoHTTP(ok, w, http.StatusOK)
+}
 
 // createUser creates a new user
 func createUser(store achieving.UserStore, _ string, w http.ResponseWriter, r *http.Request) {

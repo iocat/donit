@@ -42,6 +42,10 @@ func (sb *serverBuilder) router() *serverBuilder {
 	// Set up a handler dispatcher
 	common := sb.r
 	common.NotFoundHandler = handler.NotFound
+	common.HandleFunc(fmt.Sprintf("%s/auth", handler.User.URL()),
+		handler.Auth).Methods("GET")
+	common.HandleFunc(fmt.Sprintf("%s/changePass", handler.User.URL()),
+		handler.PasswordChange).Methods("PUT")
 	common.HandleFunc(handler.User.BaseURL(), handler.CreateUser).Methods("POST")
 	common.HandleFunc(handler.User.URL(), handler.DeleteUser).Methods("DELETE")
 	common.HandleFunc(handler.User.URL(), handler.UpdateUser).Methods("PUT")
