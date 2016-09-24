@@ -71,12 +71,7 @@ func updateGoal(user achieving.User, goalid string, w http.ResponseWriter, r *ht
 		utils.HandleError(err, w)
 		return
 	}
-	gid, err := achieving.CreateID(goalid)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	err = user.UpdateGoal(goal.(achieving.Goal), gid)
+	err = user.UpdateGoal(goal.(achieving.Goal), goalid)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
@@ -85,13 +80,9 @@ func updateGoal(user achieving.User, goalid string, w http.ResponseWriter, r *ht
 	utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
 }
 
-func deleteGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {
-	gid, err := achieving.CreateID(goalid)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	err = user.DeleteGoal(gid)
+func deleteGoal(user achieving.User, gid string, w http.ResponseWriter, r *http.Request) {
+
+	err := user.DeleteGoal(gid)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
@@ -99,12 +90,7 @@ func deleteGoal(user achieving.User, goalid string, w http.ResponseWriter, r *ht
 	utils.WriteJSONtoHTTP(nil, w, http.StatusNoContent)
 }
 
-func readGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {
-	gid, err := achieving.CreateID(goalid)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
+func readGoal(user achieving.User, gid string, w http.ResponseWriter, r *http.Request) {
 	goal, err := user.RetrieveGoal(gid)
 	if err != nil {
 		utils.HandleError(err, w)

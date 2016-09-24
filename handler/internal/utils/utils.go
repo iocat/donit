@@ -65,6 +65,7 @@ func HandleError(err error, w http.ResponseWriter) {
 		WriteJSONtoHTTP(err, w, err.Code.HTTPStatus())
 		return
 	}
+	fmt.Println(err)
 	WriteJSONtoHTTP(nil, w, http.StatusInternalServerError)
 }
 

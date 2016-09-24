@@ -23,11 +23,7 @@ func decorateAchievableHandler(getResourceKey bool, handler func(achieving.Goal,
 		if err != nil {
 			return nil, err
 		}
-		gid, err := achieving.CreateID(id)
-		if err != nil {
-			return nil, err
-		}
-		goal, err := user.RetrieveGoal(gid)
+		goal, err := user.RetrieveGoal(id)
 		if err != nil {
 			return nil, err
 		}
@@ -86,13 +82,8 @@ func createAchievable(goal achieving.Goal, _ string, w http.ResponseWriter, r *h
 	utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
 }
 
-func updateAchievable(goal achieving.Goal, key string, w http.ResponseWriter, r *http.Request) {
+func updateAchievable(goal achieving.Goal, achid string, w http.ResponseWriter, r *http.Request) {
 	ach, err := validator.Validate(r.Body, Achievable.interpreter())
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	achid, err := achieving.CreateID(key)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
@@ -105,13 +96,8 @@ func updateAchievable(goal achieving.Goal, key string, w http.ResponseWriter, r 
 	utils.WriteJSONtoHTTP(nil, w, http.StatusOK)
 }
 
-func deleteAchievable(goal achieving.Goal, key string, w http.ResponseWriter, _ *http.Request) {
-	achid, err := achieving.CreateID(key)
-	if err != nil {
-		utils.HandleError(err, w)
-		return
-	}
-	err = goal.RemoveAchievable(achid)
+func deleteAchievable(goal achieving.Goal, achid string, w http.ResponseWriter, _ *http.Request) {
+	err := goal.RemoveAchievable(achid)
 	if err != nil {
 		utils.HandleError(err, w)
 		return

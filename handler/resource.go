@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -25,10 +26,6 @@ import (
 	"github.com/iocat/donit/internal/achieving"
 	json "github.com/iocat/donit/internal/achieving/jsoninterpreter"
 )
-
-func init() {
-	// TODO: set up services and database (service package)
-}
 
 // Endpoint serializes the HTTP endpoint
 type Endpoint byte
@@ -118,7 +115,8 @@ var userInterpreter, goalInterpreter, achievableInterpreter json.Interpreter
 func init() {
 	sess, err := mgo.DialWithTimeout("localhost:27017", 5*time.Second)
 	if err != nil {
-		panic(fmt.Errorf("set up database: %s", err))
+		fmt.Printf("set up database: %s", err)
+		os.Exit(1)
 	}
 	db := sess.DB("donit")
 	collections = []*mgo.Collection{
