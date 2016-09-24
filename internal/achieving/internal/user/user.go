@@ -21,7 +21,6 @@ import (
 
 	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/goal"
-	"github.com/iocat/donit/internal/achieving/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -69,22 +68,21 @@ type Data struct {
 }
 
 // CreateGoal creates a new goal
-func (c *User) CreateGoal(goalCol *mgo.Collection, g *goal.Goal) (utils.HexID, error) {
-	id := utils.HexID{ObjectId: bson.NewObjectId()}
-	g.Username, g.HexID = c.Username, id
+func (c *User) CreateGoal(goalCol *mgo.Collection, g *goal.Goal) (bson.ObjectId, error) {
+	nid := bson.NewObjectId()
+	g.Username, g.ID = c.Username, nid
 	err := goalCol.Insert(g)
 	if err != nil {
-		// Does not catch duplication error
-		return id, err
+		return nid, fmt.Errorf("create goal: %s", err)
 	}
-	return id, nil
+	return nid, nil
 }
 
 // DeleteGoal deletes a goal
-func (c *User) DeleteGoal(goalCol *mgo.Collection, id utils.HexID) error {
+func (c *User) DeleteGoal(goalCol *mgo.Collection, id bson.ObjectId) error {
 	err := goalCol.Remove(bson.M{
 		"username": c.Username,
-		"_id":      id.ObjectId,
+		"_id":      id,
 	})
 	if err != nil {
 		if err == mgo.ErrNotFound {
@@ -96,8 +94,8 @@ func (c *User) DeleteGoal(goalCol *mgo.Collection, id utils.HexID) error {
 }
 
 // UpdateGoal updates a goal
-func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id utils.HexID) error {
-	g.Username, g.HexID = c.Username, id
+func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id bson.ObjectId) error {
+	g.Username, g.ID = c.Username, id
 	err := goalCol.Update(bson.M{
 		"username": c.Username,
 		"_id":      id,
@@ -112,9 +110,9 @@ func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id utils.HexID)
 }
 
 // RetrieveGoal gets the goal
-func (c *User) RetrieveGoal(goalCol *mgo.Collection, id utils.HexID) (goal.Goal, error) {
+func (c *User) RetrieveGoal(goalCol *mgo.Collection, id bson.ObjectId) (goal.Goal, error) {
 	var g goal.Goal
-	err := goalCol.FindId(id.ObjectId).One(&g)
+	err := goalCol.FindId(id).One(&g)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return goal.Goal{}, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id))

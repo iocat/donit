@@ -18,9 +18,10 @@ import (
 	"fmt"
 
 	"github.com/iocat/donit/internal/achieving"
+	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/goal"
-	"github.com/iocat/donit/internal/achieving/utils"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Goal implements the achieving.Goal interface
@@ -37,22 +38,35 @@ func NewGoal(taskCol *mgo.Collection) *Goal {
 }
 
 // AddAchievable adds a new achievable task
-func (cg *Goal) AddAchievable(a achieving.Achievable) (utils.HexID, error) {
+func (cg *Goal) AddAchievable(a achieving.Achievable) (string, error) {
 	if a, ok := a.(*Achievable); ok {
-		return cg.Goal.AddAchievable(cg.achievableCollection, &(a.Achievable))
+		id, err := cg.Goal.AddAchievable(cg.achievableCollection, &(a.Achievable))
+		if err != nil {
+			return "", err
+		}
+		return id.Hex(), nil
 	}
-	return utils.HexID{}, fmt.Errorf("wrong data type, expect Achievable, got %T", a)
+	return "", fmt.Errorf("wrong data type, expect Achievable, got %T", a)
 }
 
 // RemoveAchievable removes the task
-func (cg *Goal) RemoveAchievable(id utils.HexID) error {
-	return cg.RemoveAchievable(id)
+func (cg *Goal) RemoveAchievable(id string) error {
+	ok := bson.IsObjectIdHex(id)
+	if !ok {
+		return errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
+	}
+	return cg.Goal.RemoveAchievable(cg.achievableCollection, bson.ObjectIdHex(id))
 }
 
 // UpdateAchievable updates the task
-func (cg *Goal) UpdateAchievable(a achieving.Achievable, id utils.HexID) error {
+func (cg *Goal) UpdateAchievable(a achieving.Achievable, id string) error {
 	if a, ok := a.(*Achievable); ok {
-		return cg.Goal.UpdateAchievable(cg.achievableCollection, &(a.Achievable), id)
+		ok := bson.IsObjectIdHex(id)
+		if !ok {
+			return errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
+		}
+		return cg.Goal.UpdateAchievable(cg.achievableCollection, &(a.Achievable),
+			bson.ObjectIdHex(id))
 	}
 	return fmt.Errorf("wrong data type, expect Achievable, got %T", a)
 }

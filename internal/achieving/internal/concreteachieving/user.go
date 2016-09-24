@@ -18,9 +18,11 @@ import (
 	"fmt"
 
 	"github.com/iocat/donit/internal/achieving"
+	"github.com/iocat/donit/internal/achieving/errors"
 	"github.com/iocat/donit/internal/achieving/internal/user"
-	"github.com/iocat/donit/internal/achieving/utils"
+
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // NewUser creates a new empty User
@@ -39,29 +41,45 @@ type User struct {
 }
 
 // CreateGoal creates a new goal
-func (c User) CreateGoal(g achieving.Goal) (utils.HexID, error) {
+func (c User) CreateGoal(g achieving.Goal) (string, error) {
 	if g, ok := g.(*Goal); ok {
-		return c.User.CreateGoal(c.goalCollection, &(g.Goal))
+		id, err := c.User.CreateGoal(c.goalCollection, &(g.Goal))
+		if err != nil {
+			return "", err
+		}
+		return id.Hex(), nil
 	}
-	return utils.HexID{}, fmt.Errorf("invalid data type, expect Goal, got %T", g)
+	return "", fmt.Errorf("invalid data type, expect Goal, got %T", g)
 }
 
 // DeleteGoal deletes a goal
-func (c User) DeleteGoal(id utils.HexID) error {
-	return c.User.DeleteGoal(c.goalCollection, id)
+func (c User) DeleteGoal(id string) error {
+	ok := bson.IsObjectIdHex(id)
+	if !ok {
+		return errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
+	}
+	return c.User.DeleteGoal(c.goalCollection, bson.ObjectIdHex(id))
 }
 
 // UpdateGoal updates a goal
-func (c User) UpdateGoal(g achieving.Goal, id utils.HexID) error {
+func (c User) UpdateGoal(g achieving.Goal, id string) error {
+	ok := bson.IsObjectIdHex(id)
+	if !ok {
+		return errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
+	}
 	if g, ok := g.(*Goal); ok {
-		return c.User.UpdateGoal(c.goalCollection, &(g.Goal), id)
+		return c.User.UpdateGoal(c.goalCollection, &(g.Goal), bson.ObjectIdHex(id))
 	}
 	return fmt.Errorf("invalid data type, expect Goal, got %T", g)
 }
 
 // RetrieveGoal retrieves the goal
-func (c User) RetrieveGoal(id utils.HexID) (achieving.Goal, error) {
-	g, err := c.User.RetrieveGoal(c.goalCollection, id)
+func (c User) RetrieveGoal(id string) (achieving.Goal, error) {
+	ok := bson.IsObjectIdHex(id)
+	if !ok {
+		return nil, errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
+	}
+	g, err := c.User.RetrieveGoal(c.goalCollection, bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,7 @@ package achievable
 import (
 	"time"
 
-	"github.com/iocat/donit/internal/achieving/utils"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -38,10 +38,10 @@ type Reminder struct {
 
 // Achievable represents an achievable action
 type Achievable struct {
-	utils.HexID    `bson:"_id,inline" valid:"required"`
-	Goal           utils.HexID     `json:"ofGoal" valid:"required"`
+	ID             bson.ObjectId   `bson:"_id,omitempty" json:"id,omitempty" valid:"optional,hexadecimal"`
+	Goal           bson.ObjectId   `bson:"_goal,omitempty" json:"ofGoal,omitempty" valid:"optional"`
 	Name           string          `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
-	Description    string          `bson:"description,omitempty" json:"description,omitempty" valid:"optional,utfletternum,stringlength(1|400)"`
+	Description    string          `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
 	LastUpdated    time.Time       `bson:"createdAt" json:"createdAt" valid:"-"`
 	Status         string          `bson:"status" json:"status" valid:"validateStatus"`
 	Reminder       *Reminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"required"`

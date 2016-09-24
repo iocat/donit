@@ -14,14 +14,6 @@
 
 package achieving
 
-import (
-	"fmt"
-
-	"github.com/iocat/donit/internal/achieving/errors"
-	"github.com/iocat/donit/internal/achieving/utils"
-	"gopkg.in/mgo.v2/bson"
-)
-
 // Achievable represents an achieveable task
 type Achievable interface {
 	HasAchieved() bool
@@ -32,11 +24,11 @@ type Achievable interface {
 // Goal also acts as a Achievable object container
 type Goal interface {
 	// AddAchievableTask adds the task
-	AddAchievable(Achievable) (utils.HexID, error)
+	AddAchievable(Achievable) (string, error)
 	// RemoveAchievableTask removes the task
-	RemoveAchievable(utils.HexID) error
+	RemoveAchievable(string) error
 	// UpdateAchievableTask updates the task
-	UpdateAchievable(Achievable, utils.HexID) error
+	UpdateAchievable(Achievable, string) error
 
 	// RetriveAchievableTask gets a list of achievable task
 	RetrieveAchievables(limit, offset int) ([]Achievable, error)
@@ -46,13 +38,13 @@ type Goal interface {
 // User is also a Goal container that has goals' CRUD operations
 type User interface {
 	// Create goal creates a new goal
-	CreateGoal(Goal) (utils.HexID, error)
+	CreateGoal(Goal) (string, error)
 	// DeleteGoal deletes a goal
-	DeleteGoal(utils.HexID) error
+	DeleteGoal(string) error
 	// UpdateGoal updates a goal
-	UpdateGoal(Goal, utils.HexID) error
+	UpdateGoal(Goal, string) error
 	// RetrieveGoal retrieves a goal
-	RetrieveGoal(utils.HexID) (Goal, error)
+	RetrieveGoal(string) (Goal, error)
 
 	// RetrieveGoals get all the goal from this user
 	RetrieveGoals(limit, offset int) ([]Goal, error)
@@ -74,14 +66,4 @@ type UserStore interface {
 	Authenticate(string, string) (bool, error)
 	// ChangePassword changes a user password
 	ChangePassword(string, string, string) error
-}
-
-// CreateID is a helper method to create a new hexadecimal id from string
-func CreateID(id string) (utils.HexID, error) {
-	if !bson.IsObjectIdHex(id) {
-		return utils.HexID{}, errors.NewValidate(fmt.Sprintf("%s is not a hexadecimal id", id))
-	}
-	return utils.HexID{
-		ObjectId: bson.ObjectIdHex(id),
-	}, nil
 }

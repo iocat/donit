@@ -120,7 +120,7 @@ func NewGoal(achievable *mgo.Collection) Interpreter {
 func (g GoalJSONInterpreter) decode(r io.Reader) (achieving.Goal, error) {
 	var goal = concr.NewGoal(g.achievable)
 	if err := json.NewDecoder(r).Decode(&(goal.Goal)); err != nil {
-		return nil, newErrInvalidJSONType(err.Error())
+		return nil, newErrInvalidJSONType(fmt.Sprintf("decode to json: %s", err))
 	}
 	return goal, nil
 }
