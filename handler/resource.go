@@ -66,7 +66,7 @@ func (e Endpoint) resourceKeyNames() []string {
 	var keyNames = [][]string{
 		User:       []string{"user"},
 		Goal:       []string{"user", "goal"},
-		Achievable: []string{"user", "achievable"},
+		Achievable: []string{"user", "goal", "achievable"},
 	}
 	return keyNames[e]
 }
