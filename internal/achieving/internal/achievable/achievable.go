@@ -42,7 +42,6 @@ type Achievable struct {
 	Goal           bson.ObjectId   `bson:"_goal,omitempty" json:"ofGoal,omitempty" valid:"optional"`
 	Name           string          `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
 	Description    string          `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
-	LastUpdated    time.Time       `bson:"createdAt" json:"createdAt" valid:"-"`
 	Status         string          `bson:"status" json:"status" valid:"validateStatus"`
 	Reminder       *Reminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"required"`
 	RepeatReminder *RepeatReminder `bson:"repreatedReminder,omitempty" json:"repeatedReminder,omitempty" valid:"required"`
