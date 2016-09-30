@@ -89,7 +89,7 @@ func (u UserJSONInterpreter) Decode(r io.Reader) (interface{}, error) {
 
 func (u UserJSONInterpreter) encode(w io.Writer, user achieving.User) error {
 	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "\t")
+	encoder.SetIndent("", "    ")
 	if err := encoder.Encode(user); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (g GoalJSONInterpreter) Decode(r io.Reader) (interface{}, error) {
 
 func (g GoalJSONInterpreter) encode(w io.Writer, goal achieving.Goal) error {
 	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "\t")
+	encoder.SetIndent("", "    ")
 	if err := encoder.Encode(goal); err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (a AchievableJSONInterpreter) Decode(r io.Reader) (interface{}, error) {
 
 func (a AchievableJSONInterpreter) encode(w io.Writer, ach achieving.Achievable) error {
 	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "\t")
+	encoder.SetIndent("", "    ")
 	if err := encoder.Encode(ach); err != nil {
 		return err
 	}
