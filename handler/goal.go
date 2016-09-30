@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/iocat/donit/internal/achieving/validator"
 
@@ -56,13 +57,13 @@ func createGoal(user achieving.User, _ string, w http.ResponseWriter, r *http.Re
 		utils.HandleError(err, w)
 		return
 	}
-	_, err = user.CreateGoal(goal.(achieving.Goal))
+	id, err := user.CreateGoal(goal.(achieving.Goal))
 	if err != nil {
 		utils.HandleError(err, w)
 		return
 	}
-	// TODO: Figure out how to set the resource location
-	utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
+	utils.WriteJSONtoHTTPWithLocation(path.Join(r.URL.EscapedPath(), id),
+		nil, w, http.StatusCreated)
 }
 
 func updateGoal(user achieving.User, goalid string, w http.ResponseWriter, r *http.Request) {

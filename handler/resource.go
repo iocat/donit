@@ -76,12 +76,6 @@ func (e Endpoint) collectionKeyNames() []string {
 	return rkn[:len(rkn)-1]
 }
 
-// TODO: not implemented
-func (e Endpoint) resourceLocationForID(id ...string) string {
-
-	return ""
-}
-
 var baseContext = context.Background()
 
 func getResourceFromContext(ctx context.Context) interface{} {

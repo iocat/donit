@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/iocat/donit/errors"
 	"github.com/iocat/donit/handler/internal/utils"
@@ -108,12 +109,12 @@ func createUser(store achieving.UserStore, _ string, w http.ResponseWriter, r *h
 		utils.HandleError(err, w)
 		return
 	}
-	err = store.CreateNewUser(usr, password)
+	username, err := store.CreateNewUser(usr, password)
 	if err != nil {
 		utils.HandleError(err, w)
 		return
 	}
-	utils.WriteJSONtoHTTP(nil, w, http.StatusCreated)
+	utils.WriteJSONtoHTTPWithLocation(path.Join(r.URL.EscapedPath(), username), nil, w, http.StatusCreated)
 }
 
 // readUser reads the user data
