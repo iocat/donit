@@ -56,7 +56,7 @@ type UserStore interface {
 	// RetriveUser retrives the user and expand the user data as needed
 	RetrieveUser(string) (User, error)
 	// CreateNewUser creates a new user using the provided username and password
-	CreateNewUser(User, string) error
+	CreateNewUser(User, string) (string, error)
 	// DeleteUser deletes a user using the provided username and password
 	DeleteUser(string, string) error
 	// UpdateUser updates the user information
