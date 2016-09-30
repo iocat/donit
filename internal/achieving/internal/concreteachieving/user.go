@@ -79,7 +79,7 @@ func (c User) RetrieveGoal(id string) (achieving.Goal, error) {
 	if !ok {
 		return nil, errors.NewValidate(fmt.Sprintf("%s is not a valid resource id", id))
 	}
-	g, err := c.User.RetrieveGoal(c.goalCollection, bson.ObjectIdHex(id))
+	g, err := c.User.RetrieveGoal(c.goalCollection, c.achievableCollection, bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (c User) RetrieveGoal(id string) (achieving.Goal, error) {
 
 // RetrieveGoals retrieves a goal
 func (c User) RetrieveGoals(limit, offset int) ([]achieving.Goal, error) {
-	gs, err := c.User.RetriveGoals(c.goalCollection, limit, offset)
+	gs, err := c.User.RetriveGoals(c.goalCollection, c.achievableCollection, limit, offset)
 	if err != nil {
 		return nil, err
 	}

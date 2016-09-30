@@ -54,15 +54,15 @@ func (s Store) RetrieveUser(username string) (achieving.User, error) {
 }
 
 // CreateNewUser creates a new user using the provided username and password
-func (s Store) CreateNewUser(u achieving.User, password string) error {
+func (s Store) CreateNewUser(u achieving.User, password string) (string, error) {
 	if u, ok := u.(*User); ok {
 		err := user.Create(&(u.User), s.userCollection, password)
 		if err != nil {
-			return err
+			return "", err
 		}
-		return nil
+		return u.Username, nil
 	}
-	return fmt.Errorf("wrong data type, expect *concreteachieving.User, got %T", u)
+	return "", fmt.Errorf("wrong data type, expect *concreteachieving.User, got %T", u)
 }
 
 // DeleteUser deletes a user using the provided username and password

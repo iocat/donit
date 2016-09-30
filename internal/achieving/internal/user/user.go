@@ -71,6 +71,7 @@ type Data struct {
 func (c *User) CreateGoal(goalCol *mgo.Collection, g *goal.Goal) (bson.ObjectId, error) {
 	nid := bson.NewObjectId()
 	g.Username, g.ID = c.Username, nid
+	g.LastUpdated = time.Now()
 	err := goalCol.Insert(g)
 	if err != nil {
 		return nid, fmt.Errorf("create goal: %s", err)
@@ -96,6 +97,7 @@ func (c *User) DeleteGoal(goalCol *mgo.Collection, id bson.ObjectId) error {
 // UpdateGoal updates a goal
 func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id bson.ObjectId) error {
 	g.Username, g.ID = c.Username, id
+	g.LastUpdated = time.Now()
 	err := goalCol.Update(bson.M{
 		"username": c.Username,
 		"_id":      id,
@@ -110,20 +112,24 @@ func (c *User) UpdateGoal(goalCol *mgo.Collection, g *goal.Goal, id bson.ObjectI
 }
 
 // RetrieveGoal gets the goal
-func (c *User) RetrieveGoal(goalCol *mgo.Collection, id bson.ObjectId) (goal.Goal, error) {
+func (c *User) RetrieveGoal(goalCol *mgo.Collection, achC *mgo.Collection, id bson.ObjectId) (goal.Goal, error) {
 	var g goal.Goal
 	err := goalCol.FindId(id).One(&g)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return goal.Goal{}, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id))
+			return goal.Goal{}, errors.NewNotFound("goal", fmt.Sprintf("%s,%s", c.Username, id.Hex()))
 		}
+		return goal.Goal{}, err
+	}
+	g.ToDo, err = g.RetrieveAchievables(achC, 0, 0)
+	if err != nil {
 		return goal.Goal{}, err
 	}
 	return g, nil
 }
 
 // RetriveGoals retrieves all the goals
-func (c *User) RetriveGoals(goalCol *mgo.Collection, limit, offset int) ([]goal.Goal, error) {
+func (c *User) RetriveGoals(goalCol *mgo.Collection, achC *mgo.Collection, limit, offset int) ([]goal.Goal, error) {
 	var gs []goal.Goal
 	q := goalCol.Find(bson.M{
 		"username": c.Username,
@@ -137,6 +143,12 @@ func (c *User) RetriveGoals(goalCol *mgo.Collection, limit, offset int) ([]goal.
 	err := q.All(&gs)
 	if err != nil {
 		return nil, err
+	}
+	for i := range gs {
+		gs[i].ToDo, err = gs[i].RetrieveAchievables(achC, 0, 0)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return gs, nil
 }

@@ -41,11 +41,11 @@ type Goal struct {
 
 	Name          string                  `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
 	Description   string                  `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
-	LastUpdated   time.Time               `bson:"createdAt" json:"createdAt" valid:"-"`
+	LastUpdated   time.Time               `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
 	Status        string                  `bson:"status" json:"status" valid:"validateStatus"`
 	PictureURL    string                  `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
 	Accessibility string                  `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
-	ToDo          []achievable.Achievable `bson:"-" json:"todo" valid:"-"`
+	ToDo          []achievable.Achievable `bson:"-" json:"achievables" valid:"-"`
 }
 
 // AccessValidatorFunc validates the accessibility field of the Goal model
@@ -63,10 +63,38 @@ func AccessValidatorFunc(value, _ interface{}) bool {
 	}
 }
 
-// RetrieveHabit gets the habit list
-func (g *Goal) retrieve(list *[]achievable.Achievable, a *mgo.Collection, limit, offset int) error {
+// RemoveAchievable removes a habit
+func (g *Goal) RemoveAchievable(ac *mgo.Collection, id bson.ObjectId) error {
+	err := ac.Remove(bson.M{
+		"_goal": g.ID,
+		"_id":   id,
+	})
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return errors.NewNotFound("achievable", fmt.Sprintf("%s,%s", g.ID.Hex(), id))
+		}
+	}
+	return nil
+}
+
+// UpdateAchievable updates an achievable task
+func (g *Goal) UpdateAchievable(ac *mgo.Collection, a *achievable.Achievable, id bson.ObjectId) error {
+	a.Goal, a.ID = g.ID, id
+	err := ac.Update(bson.M{
+		"_goal": g.ID,
+		"_id":   id,
+	}, a)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return errors.NewNotFound("habit", fmt.Sprintf("%s,%s", g.ID, id))
+		}
+	}
+	return nil
+}
+
+func (g *Goal) retrieveAchievables(list *[]achievable.Achievable, a *mgo.Collection, limit, offset int) error {
 	q := a.Find(bson.M{
-		"goal": g.ID,
+		"_goal": g.ID,
 	})
 	if limit > 0 {
 		q.Limit(limit)
@@ -81,39 +109,10 @@ func (g *Goal) retrieve(list *[]achievable.Achievable, a *mgo.Collection, limit,
 	return nil
 }
 
-// RemoveAchievable removes a habit
-func (g *Goal) RemoveAchievable(ac *mgo.Collection, id bson.ObjectId) error {
-	err := ac.Remove(bson.M{
-		"goal": g.ID,
-		"_id":  id,
-	})
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return errors.NewNotFound("achievable", fmt.Sprintf("%s,%s", g.ID, id))
-		}
-	}
-	return nil
-}
-
-// UpdateAchievable updates an achievable task
-func (g *Goal) UpdateAchievable(ac *mgo.Collection, a *achievable.Achievable, id bson.ObjectId) error {
-	a.Goal, a.ID = g.ID, id
-	err := ac.Update(bson.M{
-		"goal": g.ID,
-		"_id":  id,
-	}, a)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return errors.NewNotFound("habit", fmt.Sprintf("%s,%s", g.ID, id))
-		}
-	}
-	return nil
-}
-
 // RetrieveAchievables gets the habit list
 func (g *Goal) RetrieveAchievables(ac *mgo.Collection, limit, offset int) ([]achievable.Achievable, error) {
 	var h []achievable.Achievable
-	err := g.retrieve(&h, ac, limit, offset)
+	err := g.retrieveAchievables(&h, ac, limit, offset)
 	if err != nil {
 		return nil, err
 	}

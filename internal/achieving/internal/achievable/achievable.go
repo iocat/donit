@@ -39,12 +39,12 @@ type Reminder struct {
 // Achievable represents an achievable action
 type Achievable struct {
 	ID             bson.ObjectId   `bson:"_id,omitempty" json:"id,omitempty" valid:"optional,hexadecimal"`
-	Goal           bson.ObjectId   `bson:"_goal,omitempty" json:"ofGoal,omitempty" valid:"optional"`
+	Goal           bson.ObjectId   `bson:"_goal,omitempty" json:"-" valid:"optional"`
 	Name           string          `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
 	Description    string          `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
 	Status         string          `bson:"status" json:"status" valid:"validateStatus"`
-	Reminder       *Reminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"required"`
-	RepeatReminder *RepeatReminder `bson:"repreatedReminder,omitempty" json:"repeatedReminder,omitempty" valid:"required"`
+	Reminder       *Reminder       `bson:"reminder,omitempty" json:"reminder,omitempty" valid:"optional"`
+	RepeatReminder *RepeatReminder `bson:"repreatedReminder,omitempty" json:"repeatedReminder,omitempty" valid:"optional"`
 }
 
 // IsHabit returns whether this is a habit
