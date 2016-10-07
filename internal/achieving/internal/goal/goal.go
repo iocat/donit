@@ -26,12 +26,12 @@ import (
 )
 
 const (
-	// AccessPrivate is private accessibility
-	AccessPrivate = "PRIVATE"
-	// AccessForFollowers is the accessibility for followers
-	AccessForFollowers = "FOR_FOLLOWERS"
-	// AccessPublic is the accessibility for public user
-	AccessPublic = "PUBLIC"
+	// VisiblePrivate only allows the user to see
+	VisiblePrivate = "PRIVATE"
+	// VisibleForFollowers allows followers to see only
+	VisibleForFollowers = "FOR_FOLLOWERS"
+	// VisiblePublic allows everyone to see it
+	VisiblePublic = "PUBLIC"
 )
 
 // Goal represents an achievable Goal
@@ -39,27 +39,27 @@ type Goal struct {
 	ID       bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty" valid:"optional,hexadecimal"`
 	Username string        `bson:"username" json:"-" valid:"optional,alphanum,length(1|30)"`
 
-	Name          string                  `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
-	Description   string                  `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
-	LastUpdated   time.Time               `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
-	Status        string                  `bson:"status" json:"status" valid:"validateStatus"`
-	PictureURL    string                  `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
-	Accessibility string                  `bson:"accessibility" json:"accessibility,omitempty" valid:"required,goalAccessValidator"`
-	ToDo          []achievable.Achievable `bson:"-" json:"achievables" valid:"-"`
+	Name        string                  `bson:"name" json:"name" valid:"name" valid:"required,utfletternum,stringlength(1|100)"`
+	Description string                  `bson:"description,omitempty" json:"description,omitempty" valid:"optional,stringlength(1|400)"`
+	LastUpdated time.Time               `bson:"lastUpdated" json:"lastUpdated" valid:"-"`
+	Status      string                  `bson:"status" json:"status" valid:"validateStatus"`
+	PictureURL  string                  `bson:"pictureUrl,omitempty" json:"pictureUrl,omitempty" valid:"optional,url"`
+	Visibility  string                  `bson:"visibility" json:"visibility,omitempty" valid:"required,goalVisibilityValidator"`
+	ToDo        []achievable.Achievable `bson:"-" json:"achievables" valid:"-"`
 }
 
-// AccessValidatorFunc validates the accessibility field of the Goal model
-func AccessValidatorFunc(value, _ interface{}) bool {
+// VisibilityValidatorFunc validates the visibility field of goal
+func VisibilityValidatorFunc(value, _ interface{}) bool {
 	switch value := value.(type) {
 	case string:
 		switch value {
-		case AccessPrivate, AccessPublic, AccessForFollowers:
+		case VisiblePublic, VisiblePrivate, VisibleForFollowers:
 			return true
 		default:
 			return false
 		}
 	default:
-		panic("the accessibility field must be a string")
+		panic("the visibility field must be a string")
 	}
 }
 

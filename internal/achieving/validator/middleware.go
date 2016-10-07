@@ -29,8 +29,9 @@ import (
 )
 
 func init() {
-	valid.CustomTypeTagMap.Set("goalAccessField",
-		valid.CustomTypeValidator(goal.AccessValidatorFunc))
+	// Load the validator into the validator registers
+	valid.CustomTypeTagMap.Set("goalVisibilityValidator",
+		valid.CustomTypeValidator(goal.VisibilityValidatorFunc))
 	valid.CustomTypeTagMap.Set("validateUserStatus",
 		valid.CustomTypeValidator(user.ValidateUserStatus))
 	valid.CustomTypeTagMap.Set("validateStatus",
