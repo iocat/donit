@@ -21,7 +21,7 @@ import (
 
 const (
 	// EveryDay is the Cycle for Every day habit
-	EveryDay = "EVERYDAY"
+	EveryDay = "EVERY_DAY"
 	// EveryWeekAndCustom is the cycle for every week habit
 	EveryWeekAndCustom = "EVERY_WEEK"
 	// EveryMonthAndCustom is the cycle for every month habit
@@ -29,7 +29,7 @@ const (
 )
 const (
 	// Sunday represents Sunday
-	Sunday = iota + 1
+	Sunday = iota
 	// Monday represents Monday
 	Monday
 	// Tuesday represents Tuesday
