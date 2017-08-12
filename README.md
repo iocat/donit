@@ -1,1 +1,1 @@
-### RESTful Server for a realtime task-focused social network ###
+### RESTful Server for a realtime goal tracking web application ###
